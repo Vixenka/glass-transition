@@ -3,6 +3,10 @@ name = "glass-transition"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = []
+dynamic-linking = ["bevy/dynamic_linking"]
+
 [dependencies]
 bevy = "0.12.1"
 
