@@ -782,8 +782,7 @@ checksum = "c77ec20c8fafcdc196508ef5ccb4f0400a8d193cb61f7b14a36ed9a25ad423cf"
 [[package]]
 name = "bevy_rapier3d"
 version = "0.23.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c3f0a2641af76c9eb17da0dcb0fb20cd9d615b93b67be0b85f1867487e956b5a"
+source = "git+https://github.com/liquidev/bevy_rapier?branch=glass-transition-downstream#9f060aafeedf03a8e2c1aacd0f1f33f1192542c9"
 dependencies = [
  "bevy",
  "bitflags 2.4.1",

@@ -13,6 +13,7 @@ pub struct CharacterPhysicsBundle {
     pub rigid_body: RigidBody,
     pub controller: KinematicCharacterController,
     pub vectors: CharacterVectors,
+    pub transform_interpolation: TransformInterpolation,
 }
 
 impl CharacterPhysicsBundle {
@@ -26,9 +27,11 @@ impl CharacterPhysicsBundle {
                     Vect::ZERO,
                     Rot::IDENTITY,
                 )),
+                apply_impulse_to_dynamic_bodies: true,
                 ..default()
             },
             vectors: CharacterVectors::default(),
+            transform_interpolation: TransformInterpolation::default(),
         }
     }
 }
