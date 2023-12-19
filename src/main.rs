@@ -8,6 +8,7 @@ use developer_tools::prototype_material::PrototypeMaterial;
 pub mod camera;
 pub mod character;
 pub mod developer_tools;
+pub mod network;
 
 #[bevy_main]
 fn main() {
@@ -25,6 +26,7 @@ fn main() {
                     watch_for_changes_override: Some(true),
                     ..default()
                 }),
+            bevy_egui::EguiPlugin,
             MaterialPlugin::<PrototypeMaterial>::default(),
             RapierPhysicsPlugin::<()>::default()
                 .in_fixed_schedule()
@@ -33,6 +35,7 @@ fn main() {
                 enabled: true,
                 ..default()
             },
+            network::NetworkPlugin,
             camera::CameraPlugin,
             character::CharacterPlugin,
         ))

@@ -3,6 +3,8 @@ pub mod player;
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 
+use self::player::PlayerPlugin;
+
 #[derive(Component, Default)]
 pub struct CharacterVectors {
     pub velocity: Vec3,
@@ -53,8 +55,8 @@ pub struct CharacterPlugin;
 
 impl Plugin for CharacterPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(FixedUpdate, ground_characters)
-            .add_systems(FixedUpdate, player::control)
+        app.add_plugins(PlayerPlugin)
+            .add_systems(FixedUpdate, ground_characters)
             .add_systems(FixedUpdate, move_characters);
     }
 }

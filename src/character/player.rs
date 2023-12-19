@@ -1,9 +1,20 @@
 use bevy::{math::vec3, prelude::*};
+use bevy_replicon::network_event::{client_event::ClientEventAppExt, EventType};
+use serde::{Deserialize, Serialize};
 
 use super::{CharacterPhysicsBundle, CharacterVectors};
 
 pub const RADIUS: f32 = 0.4;
 pub const HALF_HEIGHT: f32 = 0.4;
+
+pub struct PlayerPlugin;
+
+impl Plugin for PlayerPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_client_event::<MoveEvent>(EventType::Ordered)
+            .add_systems(FixedUpdate, control);
+    }
+}
 
 #[derive(Component)]
 pub struct PlayerControls;
@@ -25,7 +36,11 @@ impl PlayerBundle {
     }
 }
 
+#[derive(Debug, Default, Deserialize, Event, Serialize)]
+pub struct MoveEvent(Vec3);
+
 pub fn control(
+    mut move_event: EventWriter<MoveEvent>,
     mut query: Query<(&PlayerControls, &mut CharacterVectors)>,
     input: Res<Input<KeyCode>>,
 ) {
@@ -52,5 +67,9 @@ pub fn control(
         let damping = 0.8;
         vectors.velocity.x *= damping;
         vectors.velocity.z *= damping;
+
+        if vectors.velocity != Vec3::ZERO {
+            move_event.send(MoveEvent(vectors.velocity));
+        }
     }
 }
