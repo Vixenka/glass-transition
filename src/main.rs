@@ -1,10 +1,11 @@
 use std::f32::consts::PI;
 
-use bevy::{pbr::CascadeShadowConfigBuilder, prelude::*, render::camera::ScalingMode};
+use bevy::{pbr::CascadeShadowConfigBuilder, prelude::*};
 use bevy_rapier3d::prelude::*;
 use character::player::PlayerBundle;
 use developer_tools::prototype_material::PrototypeMaterial;
 
+pub mod camera;
 pub mod character;
 pub mod developer_tools;
 
@@ -32,6 +33,7 @@ fn main() {
                 enabled: true,
                 ..default()
             },
+            camera::CameraPlugin,
             character::CharacterPlugin,
         ))
         .add_systems(Startup, setup)
@@ -45,22 +47,11 @@ fn setup(
     mut prototype_materials: ResMut<Assets<PrototypeMaterial>>,
     assets: Res<AssetServer>,
 ) {
-    commands.spawn(Camera3dBundle {
-        projection: OrthographicProjection {
-            scale: 3.0,
-            scaling_mode: ScalingMode::FixedVertical(2.0),
-            ..default()
-        }
-        .into(),
-        transform: Transform::from_xyz(5.0, 5.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
-        ..default()
-    });
-
     commands.spawn((
         RigidBody::Fixed,
-        Collider::cuboid(2.5, 1.0, 2.5),
+        Collider::cuboid(25.0, 1.0, 25.0),
         MaterialMeshBundle {
-            mesh: meshes.add(shape::Box::new(5.0, 2.0, 5.0).into()),
+            mesh: meshes.add(shape::Box::new(50.0, 2.0, 50.0).into()),
             material: PrototypeMaterial::get(&mut prototype_materials, &assets, "floor"),
             ..default()
         },
