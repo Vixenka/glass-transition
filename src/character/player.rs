@@ -32,20 +32,22 @@ pub fn control(
     for (_controls, mut vectors) in &mut query {
         vectors.velocity += vec3(0.0, -0.005, 0.0);
 
-        let speed = 0.01;
-
+        let mut movement = Vec3::ZERO;
         if input.pressed(KeyCode::A) {
-            vectors.velocity += vec3(-speed, 0.0, speed);
+            movement += vec3(-1.0, 0.0, 1.0);
         }
         if input.pressed(KeyCode::S) {
-            vectors.velocity += vec3(speed, 0.0, speed);
+            movement += vec3(1.0, 0.0, 1.0);
         }
         if input.pressed(KeyCode::D) {
-            vectors.velocity += vec3(speed, 0.0, -speed);
+            movement += vec3(1.0, 0.0, -1.0);
         }
         if input.pressed(KeyCode::W) {
-            vectors.velocity += vec3(-speed, 0.0, -speed);
+            movement += vec3(-1.0, 0.0, -1.0);
         }
+        let speed = 0.015;
+        movement = movement.normalize_or_zero() * speed;
+        vectors.velocity += movement;
 
         let damping = 0.8;
         vectors.velocity.x *= damping;
