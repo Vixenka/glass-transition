@@ -9,7 +9,8 @@ dynamic-linking = ["bevy/dynamic_linking"]
 
 [dependencies]
 bevy = { version = "0.12.1", features = ["file_watcher"] }
-bevy_rapier3d = { version = "0.23.0", features = ["debug-render-3d"] }
+bevy_rapier3d = { git = "https://github.com/liquidev/bevy_rapier", branch = "glass-transition-downstream" }
+# bevy_rapier3d = { version = "0.23.0", features = ["debug-render-3d"] }
 random_color = "0.8.0"
 
 [profile.dev.package."*"]
