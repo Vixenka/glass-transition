@@ -9,7 +9,7 @@ use bevy::{
 };
 use random_color::{Luminosity, RandomColor};
 
-const SHADER_PATH: &'static str = "shaders/developer_tools/prototype_material.wgsl";
+const SHADER_PATH: &str = "shaders/developer_tools/prototype_material.wgsl";
 
 #[derive(Asset, AsBindGroup, TypePath, Debug, Clone)]
 pub struct PrototypeMaterial {
