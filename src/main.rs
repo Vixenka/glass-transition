@@ -1,8 +1,10 @@
 use std::f32::consts::PI;
 
-use bevy::{math::vec3, pbr::CascadeShadowConfigBuilder, prelude::*, render::camera::ScalingMode};
+use bevy::{pbr::CascadeShadowConfigBuilder, prelude::*, render::camera::ScalingMode};
 use bevy_rapier3d::prelude::*;
+use character::player::PlayerBundle;
 
+pub mod character;
 pub mod developer_tools;
 
 #[bevy_main]
@@ -25,8 +27,9 @@ fn main() {
             ..default()
         })
         .add_systems(Startup, setup)
-        .add_systems(FixedUpdate, move_characters)
-        .add_systems(FixedUpdate, control_player)
+        .add_systems(FixedUpdate, character::ground_characters)
+        .add_systems(FixedUpdate, character::player::control)
+        .add_systems(FixedUpdate, character::move_characters)
         .run();
 }
 
@@ -57,11 +60,11 @@ fn setup(
     ));
 
     commands.spawn((
-        PlayerBundle::new(),
+        PlayerBundle::new(Transform::from_xyz(0.0, 3.0, 0.0)),
         meshes.add(
             shape::Cylinder {
-                radius: PlayerBundle::RADIUS,
-                height: PlayerBundle::HALF_HEIGHT * 2.0,
+                radius: character::player::RADIUS,
+                height: character::player::HALF_HEIGHT * 2.0,
                 resolution: 16,
                 segments: 1,
             }
@@ -91,84 +94,4 @@ fn setup(
         .into(),
         ..default()
     });
-}
-
-#[derive(Component)]
-struct PlayerControls {}
-
-#[derive(Component, Default)]
-struct CharacterVectors {
-    velocity: Vec3,
-}
-
-#[derive(Bundle)]
-struct CharacterPhysicsBundle {
-    rigid_body: RigidBody,
-    controller: KinematicCharacterController,
-    vectors: CharacterVectors,
-}
-
-#[derive(Bundle)]
-struct PlayerBundle {
-    transform: TransformBundle,
-    controls: PlayerControls,
-    character_physics: CharacterPhysicsBundle,
-}
-
-impl PlayerBundle {
-    const RADIUS: f32 = 0.4;
-    const HALF_HEIGHT: f32 = 0.4;
-
-    pub fn new() -> PlayerBundle {
-        Self {
-            transform: TransformBundle::from_transform(Transform::from_xyz(0.0, 3.0, 0.0)),
-            controls: PlayerControls {},
-            character_physics: CharacterPhysicsBundle {
-                rigid_body: RigidBody::KinematicVelocityBased,
-                controller: KinematicCharacterController {
-                    custom_shape: Some((
-                        Collider::cylinder(Self::RADIUS, Self::HALF_HEIGHT),
-                        Vect::ZERO,
-                        Rot::IDENTITY,
-                    )),
-                    ..default()
-                },
-                vectors: CharacterVectors::default(),
-            },
-        }
-    }
-}
-
-fn move_characters(mut query: Query<(&mut KinematicCharacterController, &CharacterVectors)>) {
-    for (mut controller, vectors) in &mut query {
-        controller.translation = Some(vectors.velocity);
-    }
-}
-
-fn control_player(
-    mut query: Query<(&PlayerControls, &mut CharacterVectors)>,
-    input: Res<Input<KeyCode>>,
-) {
-    for (_controls, mut vectors) in &mut query {
-        vectors.velocity += vec3(0.0, -0.005, 0.0);
-
-        let speed = 0.01;
-
-        if input.pressed(KeyCode::A) {
-            vectors.velocity += vec3(-speed, 0.0, speed);
-        }
-        if input.pressed(KeyCode::S) {
-            vectors.velocity += vec3(speed, 0.0, speed);
-        }
-        if input.pressed(KeyCode::D) {
-            vectors.velocity += vec3(speed, 0.0, -speed);
-        }
-        if input.pressed(KeyCode::W) {
-            vectors.velocity += vec3(-speed, 0.0, -speed);
-        }
-
-        let damping = 0.8;
-        vectors.velocity.x *= damping;
-        vectors.velocity.z *= damping;
-    }
 }
