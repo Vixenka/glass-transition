@@ -3,6 +3,7 @@ use std::f32::consts::PI;
 use bevy::{pbr::CascadeShadowConfigBuilder, prelude::*, render::camera::ScalingMode};
 use bevy_rapier3d::prelude::*;
 use character::player::PlayerBundle;
+use developer_tools::prototype_material::PrototypeMaterial;
 
 pub mod character;
 pub mod developer_tools;
@@ -10,23 +11,29 @@ pub mod developer_tools;
 #[bevy_main]
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins.set(WindowPlugin {
-            primary_window: Some(Window {
-                title: "GLASS TRANSITION".into(),
-                ..default()
-            }),
-            ..default()
-        }))
-        .add_plugins(
+        .add_plugins((
+            DefaultPlugins
+                .set(WindowPlugin {
+                    primary_window: Some(Window {
+                        title: "GLASS TRANSITION".into(),
+                        ..default()
+                    }),
+                    ..default()
+                })
+                .set(AssetPlugin {
+                    watch_for_changes_override: Some(true),
+                    ..default()
+                }),
+            MaterialPlugin::<PrototypeMaterial>::default(),
             RapierPhysicsPlugin::<()>::default()
                 .in_fixed_schedule()
                 .with_physics_scale(1.0),
-        )
-        .add_plugins(RapierDebugRenderPlugin {
-            enabled: true,
-            ..default()
-        })
-        .add_plugins(character::CharacterPlugin)
+            RapierDebugRenderPlugin {
+                enabled: true,
+                ..default()
+            },
+            character::CharacterPlugin,
+        ))
         .add_systems(Startup, setup)
         .run();
 }
@@ -35,6 +42,8 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    mut prototype_materials: ResMut<Assets<PrototypeMaterial>>,
+    assets: Res<AssetServer>,
 ) {
     commands.spawn(Camera3dBundle {
         projection: OrthographicProjection {
@@ -50,9 +59,9 @@ fn setup(
     commands.spawn((
         RigidBody::Fixed,
         Collider::cuboid(2.5, 1.0, 2.5),
-        PbrBundle {
+        MaterialMeshBundle {
             mesh: meshes.add(shape::Box::new(5.0, 2.0, 5.0).into()),
-            material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
+            material: PrototypeMaterial::get(&mut prototype_materials, &assets, "floor"),
             ..default()
         },
     ));
