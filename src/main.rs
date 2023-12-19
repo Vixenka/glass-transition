@@ -3,6 +3,9 @@ use std::f32::consts::PI;
 use bevy::{math::vec3, pbr::CascadeShadowConfigBuilder, prelude::*, render::camera::ScalingMode};
 use bevy_rapier3d::prelude::*;
 
+pub mod developer_tools;
+
+#[bevy_main]
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
