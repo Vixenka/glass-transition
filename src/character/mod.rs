@@ -48,3 +48,13 @@ pub fn move_characters(mut query: Query<(&mut KinematicCharacterController, &Cha
         controller.translation = Some(vectors.velocity);
     }
 }
+
+pub struct CharacterPlugin;
+
+impl Plugin for CharacterPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(FixedUpdate, ground_characters)
+            .add_systems(FixedUpdate, player::control)
+            .add_systems(FixedUpdate, move_characters);
+    }
+}

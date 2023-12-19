@@ -26,10 +26,8 @@ fn main() {
             enabled: true,
             ..default()
         })
+        .add_plugins(character::CharacterPlugin)
         .add_systems(Startup, setup)
-        .add_systems(FixedUpdate, character::ground_characters)
-        .add_systems(FixedUpdate, character::player::control)
-        .add_systems(FixedUpdate, character::move_characters)
         .run();
 }
 
