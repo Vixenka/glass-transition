@@ -195,20 +195,18 @@ fn control(mut query: Query<&mut CharacterVectors, With<LocalPlayer>>, input: Re
 struct TransformEvent {
     client_id: u64,
     transform: SyncedTransform,
-    vectors: CharacterVectors,
 }
 
 fn transform_server_sender(
     mut event: EventWriter<ToClients<TransformEvent>>,
-    query: Query<(&CharacterVectors, &Transform, &Player)>,
+    query: Query<(&Transform, &Player)>,
 ) {
-    for (vectors, transform, player) in &mut query.iter() {
+    for (transform, player) in &mut query.iter() {
         event.send(ToClients {
             mode: SendMode::BroadcastExcept(SERVER_ID),
             event: TransformEvent {
                 client_id: player.client_id,
                 transform: (*transform).into(),
-                vectors: vectors.clone(),
             },
         });
     }
@@ -216,14 +214,13 @@ fn transform_server_sender(
 
 fn transform_client_handler(
     mut event: EventReader<TransformEvent>,
-    mut query: Query<(&Player, &mut CharacterVectors, &mut SyncedTransform), Without<LocalPlayer>>,
+    mut query: Query<(&Player, &mut SyncedTransform), Without<LocalPlayer>>,
 ) {
     for event in event.read() {
         // Ignore LocalPlayer.
-        if let Some((_, mut vectors, mut transform)) =
+        if let Some((_, mut transform)) =
             query.iter_mut().find(|x| x.0.client_id == event.client_id)
         {
-            *vectors = event.vectors.clone();
             *transform = event.transform.clone();
         }
     }
@@ -231,27 +228,25 @@ fn transform_client_handler(
 
 fn transform_client_sender(
     mut event: EventWriter<TransformEvent>,
-    query: Query<(&CharacterVectors, &Transform, &Player), With<LocalPlayer>>,
+    query: Query<(&Transform, &Player), With<LocalPlayer>>,
 ) {
-    let (vectors, transform, player) = query.single();
+    let (transform, player) = query.single();
     event.send(TransformEvent {
         client_id: player.client_id,
         transform: (*transform).into(),
-        vectors: vectors.clone(),
     });
 }
 
 fn transform_server_handler(
     mut event: EventReader<FromClient<TransformEvent>>,
-    mut query: Query<(&Player, &mut CharacterVectors, &mut SyncedTransform)>,
+    mut query: Query<(&Player, &mut SyncedTransform)>,
 ) {
     for FromClient { client_id, event } in event.read() {
-        let (_, mut vectors, mut transform) = query
+        let (_, mut transform) = query
             .iter_mut()
             .find(|x| x.0.client_id == client_id.raw())
             .expect("Expecting player to exist");
 
-        *vectors = event.vectors.clone();
         *transform = event.transform.clone();
     }
 }
