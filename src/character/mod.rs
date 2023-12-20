@@ -2,8 +2,23 @@ pub mod player;
 
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
+use bevy_replicon::replicon_core::replication_rules::{AppReplicationExt, Replication};
+use serde::{Deserialize, Serialize};
 
-#[derive(Component, Default)]
+use self::player::PlayerPlugin;
+
+pub struct CharacterPlugin;
+
+impl Plugin for CharacterPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_plugins(PlayerPlugin)
+            .replicate::<CharacterVectors>()
+            .add_systems(FixedUpdate, ground_characters)
+            .add_systems(FixedUpdate, move_characters);
+    }
+}
+
+#[derive(Component, Clone, Default, Serialize, Deserialize)]
 pub struct CharacterVectors {
     pub velocity: Vec3,
 }
@@ -14,6 +29,7 @@ pub struct CharacterPhysicsBundle {
     pub controller: KinematicCharacterController,
     pub vectors: CharacterVectors,
     pub transform_interpolation: TransformInterpolation,
+    replication: Replication,
 }
 
 impl CharacterPhysicsBundle {
@@ -32,6 +48,7 @@ impl CharacterPhysicsBundle {
             },
             vectors: CharacterVectors::default(),
             transform_interpolation: TransformInterpolation::default(),
+            replication: Replication,
         }
     }
 }
@@ -49,15 +66,5 @@ pub fn ground_characters(
 pub fn move_characters(mut query: Query<(&mut KinematicCharacterController, &CharacterVectors)>) {
     for (mut controller, vectors) in &mut query {
         controller.translation = Some(vectors.velocity);
-    }
-}
-
-pub struct CharacterPlugin;
-
-impl Plugin for CharacterPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(FixedUpdate, ground_characters)
-            .add_systems(FixedUpdate, player::control)
-            .add_systems(FixedUpdate, move_characters);
     }
 }
