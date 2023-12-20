@@ -18,7 +18,7 @@ impl Plugin for CharacterPlugin {
     }
 }
 
-#[derive(Component, Default, Serialize, Deserialize)]
+#[derive(Component, Clone, Default, Serialize, Deserialize)]
 pub struct CharacterVectors {
     pub velocity: Vec3,
 }

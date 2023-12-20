@@ -13,6 +13,11 @@ use bevy_replicon::{
     },
 };
 
+#[derive(Resource)]
+pub struct Client {
+    pub id: u64,
+}
+
 pub fn start_connection(
     mut commands: Commands,
     address: &str,
@@ -50,6 +55,7 @@ pub fn start_connection(
 
     info!("Client started on {}", server_address);
 
+    commands.insert_resource(Client { id: client_id });
     commands.insert_resource(client);
     commands.insert_resource(transport);
 }

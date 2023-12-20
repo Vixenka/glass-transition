@@ -26,8 +26,13 @@ impl Plugin for ServerPlugin {
     }
 }
 
+#[derive(Resource)]
+pub struct Server;
+
 pub fn start_listening(
     mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
     address: &str,
     network_channels: Res<NetworkChannels>,
 ) {
@@ -59,6 +64,17 @@ pub fn start_listening(
 
     commands.insert_resource(server);
     commands.insert_resource(transport);
+    commands.insert_resource(Server);
+
+    player::spawn(
+        &mut commands,
+        &mut meshes,
+        &mut materials,
+        player::Player {
+            client_id: SERVER_ID.raw(),
+        },
+        true,
+    );
 }
 
 fn event_system(
@@ -80,6 +96,7 @@ fn event_system(
                     player::Player {
                         client_id: client_id.raw(),
                     },
+                    false,
                 );
             }
             ServerEvent::ClientDisconnected { client_id, reason } => {

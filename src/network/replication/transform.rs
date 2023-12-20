@@ -27,9 +27,7 @@ fn deserialize_transform(
     _replicon_tick: RepliconTick,
 ) -> bincode::Result<()> {
     let translation: Vec3 = bincode::deserialize_from(cursor)?;
-    entity.insert(TransformBundle::from_transform(
-        Transform::from_translation(translation),
-    ));
+    entity.insert(Transform::from_translation(translation));
 
     Ok(())
 }

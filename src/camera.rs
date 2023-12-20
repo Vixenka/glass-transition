@@ -1,13 +1,13 @@
 use bevy::{prelude::*, render::camera::ScalingMode};
 
-use crate::character::player::PlayerControls;
+use crate::{character::player::LocalPlayer, network::has_local_player};
 
 pub struct CameraPlugin;
 
 impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, setup)
-            .add_systems(PreUpdate, move_camera);
+            .add_systems(PreUpdate, move_camera.run_if(has_local_player()));
     }
 }
 
@@ -26,13 +26,9 @@ fn setup(mut commands: Commands) {
 
 fn move_camera(
     time: Res<Time>,
-    mut camera: Query<&mut Transform, (With<Camera>, Without<PlayerControls>)>,
-    players: Query<&Transform, With<PlayerControls>>,
+    mut camera: Query<&mut Transform, (With<Camera>, Without<LocalPlayer>)>,
+    players: Query<&Transform, With<LocalPlayer>>,
 ) {
-    if players.is_empty() {
-        return;
-    }
-
     let mut transform = camera.single_mut();
     let player_transform = players.single();
 
