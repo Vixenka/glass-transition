@@ -1,6 +1,9 @@
 use bevy::{prelude::*, render::camera::ScalingMode};
 
-use crate::{character::player::LocalPlayer, network::has_local_player};
+use crate::{
+    character::player::LocalPlayer, math::delta_time_independent_lerp_exponent,
+    network::has_local_player,
+};
 
 pub struct CameraPlugin;
 
@@ -33,7 +36,8 @@ fn move_camera(
     let player_transform = players.single();
 
     let target_position = player_transform.translation + Vec3::new(5.0, 5.0, 5.0);
-    transform.translation = transform
-        .translation
-        .lerp(target_position, time.delta_seconds());
+    transform.translation = transform.translation.lerp(
+        target_position,
+        delta_time_independent_lerp_exponent(0.03, time.delta_seconds()),
+    );
 }

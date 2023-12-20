@@ -7,6 +7,7 @@ use developer_tools::prototype_material::PrototypeMaterial;
 pub mod camera;
 pub mod character;
 pub mod developer_tools;
+pub mod math;
 pub mod network;
 
 const TIMESTEP: f64 = 1.0 / 64.0;

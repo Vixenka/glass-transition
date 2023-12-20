@@ -3,7 +3,7 @@ use bevy_replicon::{bincode, prelude::*, replicon_core::replication_rules};
 use serde::{Deserialize, Serialize};
 use std::io::Cursor;
 
-use crate::network;
+use crate::math::delta_time_independent_lerp_exponent;
 
 pub struct TransformPlugin;
 
@@ -46,7 +46,7 @@ impl From<SyncedTransform> for Transform {
 }
 
 fn apply_synced_transform(mut query: Query<(&mut Transform, &SyncedTransform)>, time: Res<Time>) {
-    let t = time.delta_seconds() * network::MAX_TICK_RATE as f32;
+    let t = delta_time_independent_lerp_exponent(0.7, time.delta_seconds());
 
     for (mut transform, synced_transform) in query.iter_mut() {
         transform.translation = transform.translation.lerp(synced_transform.translation, t);
