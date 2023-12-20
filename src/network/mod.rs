@@ -1,12 +1,13 @@
 pub mod client;
+pub mod network_error;
 pub mod replication;
 pub mod server;
 
-use std::str::FromStr;
+use std::{net::IpAddr, str::FromStr};
 
 use bevy::prelude::*;
 use bevy_egui::{
-    egui::{self},
+    egui::{self, Color32},
     EguiContexts,
 };
 use bevy_replicon::{
@@ -17,11 +18,13 @@ use crate::character::player::LocalPlayerResource;
 
 use self::{
     client::Client,
+    network_error::NetworkError,
     server::{Server, ServerPlugin},
 };
 
 pub const MAX_TICK_RATE: u16 = 30;
 pub const PROTOCOL_ID: u64 = 0;
+pub const DEFAULT_PORT: u16 = 13001;
 
 pub struct NetworkPlugin;
 
@@ -37,6 +40,7 @@ impl Plugin for NetworkPlugin {
         )
         .insert_resource(NetworkUiState {
             address: String::from_str("127.0.0.1:13001").unwrap(),
+            last_error: None,
         })
         .add_plugins((replication::ReplicationPlugin, ServerPlugin))
         .add_systems(Update, ui);
@@ -46,6 +50,7 @@ impl Plugin for NetworkPlugin {
 #[derive(Resource)]
 pub struct NetworkUiState {
     address: String,
+    last_error: Option<String>,
 }
 
 pub fn has_server() -> impl FnMut(Option<Res<Server>>) -> bool + Clone {
@@ -76,7 +81,11 @@ fn ui(
     server: Option<Res<RenetServer>>,
     client: Option<Res<Client>>,
 ) {
-    egui::Window::new("Network managment").show(ctx.ctx_mut(), |ui| {
+    egui::Window::new("Multiplayer").show(ctx.ctx_mut(), |ui| {
+        if let Some(err) = &state.last_error {
+            ui.colored_label(Color32::RED, err);
+        }
+
         if server.is_none() && client.is_none() {
             ui_connect(meshes, materials, state, commands, network_channels, ui);
         }
@@ -91,18 +100,50 @@ fn ui_connect(
     network_channels: Res<NetworkChannels>,
     ui: &mut egui::Ui,
 ) {
-    ui.label("Address");
+    ui.label("Address and port");
     ui.text_edit_singleline(&mut state.address);
 
+    if let Err(err) = ui_connect_buttons(meshes, materials, &state, commands, network_channels, ui)
+    {
+        state.last_error = Some(err.to_string());
+    } else {
+        state.last_error = None;
+    }
+}
+
+fn ui_connect_buttons(
+    meshes: ResMut<Assets<Mesh>>,
+    materials: ResMut<Assets<StandardMaterial>>,
+    state: &ResMut<NetworkUiState>,
+    commands: Commands,
+    network_channels: Res<NetworkChannels>,
+    ui: &mut egui::Ui,
+) -> Result<(), NetworkError> {
     if ui.button("Connect").clicked() {
-        client::start_connection(commands, &state.address, network_channels);
+        let (ip, port) = parse_address_and_port(&state.address)?;
+        return client::start_connection(commands, network_channels, ip, port);
     } else if ui.button("Host game").clicked() {
-        server::start_listening(
-            commands,
-            meshes,
-            materials,
-            &state.address,
-            network_channels,
-        );
+        let (_ip, port) = parse_address_and_port(&state.address)?;
+        return server::start_listening(commands, meshes, materials, network_channels, port);
+    }
+    Ok(())
+}
+
+fn parse_address_and_port(value: &str) -> Result<(IpAddr, u16), NetworkError> {
+    let mut split = value.split(':');
+    let ip = match split.next() {
+        Some(ip) => IpAddr::from_str(ip).map_err(|_| NetworkError::InvalidAddress)?,
+        None => return Err(NetworkError::MissingAddress),
+    };
+
+    let port = match split.next() {
+        Some(port) => u16::from_str(port).map_err(|_| NetworkError::InvalidPort)?,
+        None => DEFAULT_PORT,
+    };
+
+    if split.next().is_some() {
+        Err(NetworkError::InvalidAddress)
+    } else {
+        Ok((ip, port))
     }
 }

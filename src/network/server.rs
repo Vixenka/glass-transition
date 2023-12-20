@@ -1,6 +1,5 @@
 use std::{
     net::{Ipv4Addr, SocketAddr, UdpSocket},
-    str::FromStr,
     time::SystemTime,
 };
 
@@ -15,13 +14,15 @@ use bevy_replicon::{
 
 use crate::character::player::{self, Player};
 
+use super::network_error::NetworkError;
+
 pub struct ServerPlugin;
 
 impl Plugin for ServerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            event_system.run_if(resource_exists::<RenetServer>()),
+            process_server_events.run_if(resource_exists::<RenetServer>()),
         );
     }
 }
@@ -33,21 +34,17 @@ pub fn start_listening(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    address: &str,
     network_channels: Res<NetworkChannels>,
-) {
+    server_port: u16,
+) -> Result<(), NetworkError> {
     let server = RenetServer::new(ConnectionConfig {
         server_channels_config: network_channels.get_server_configs(),
         client_channels_config: network_channels.get_client_configs(),
         ..default()
     });
 
-    let public_address = SocketAddr::new(
-        Ipv4Addr::LOCALHOST.into(),
-        u16::from_str(address.split(':').last().unwrap_or("13001"))
-            .expect("Port is not a u16 number"),
-    );
-    let socket = UdpSocket::bind(public_address).expect("Unable to bind socket");
+    let public_address = SocketAddr::new(Ipv4Addr::LOCALHOST.into(), server_port);
+    let socket = UdpSocket::bind(public_address).map_err(|_| NetworkError::UnableBindSocket)?;
     let server_config = ServerConfig {
         current_time: SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)
@@ -58,7 +55,7 @@ pub fn start_listening(
         public_addresses: vec![public_address],
     };
     let transport = NetcodeServerTransport::new(server_config, socket)
-        .expect("Unable to create server transport");
+        .map_err(|_| NetworkError::UnableCreateServerTransport)?;
 
     info!("Server started on {}", public_address);
 
@@ -71,13 +68,15 @@ pub fn start_listening(
         &mut meshes,
         &mut materials,
         player::Player {
-            client_id: SERVER_ID.raw(),
+            client_id: SERVER_ID.into(),
         },
-        true,
+        player::PlayerKind::Local,
     );
+
+    Ok(())
 }
 
-fn event_system(
+fn process_server_events(
     mut server_event: EventReader<ServerEvent>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -94,9 +93,9 @@ fn event_system(
                     &mut meshes,
                     &mut materials,
                     player::Player {
-                        client_id: client_id.raw(),
+                        client_id: (*client_id).into(),
                     },
-                    false,
+                    player::PlayerKind::Remote,
                 );
             }
             ServerEvent::ClientDisconnected { client_id, reason } => {
@@ -104,7 +103,7 @@ fn event_system(
 
                 query
                     .iter()
-                    .filter(|x| x.1.client_id == client_id.raw())
+                    .filter(|x| x.1.client_id == client_id)
                     .for_each(|x| {
                         commands.entity(x.0).despawn_recursive();
                     });

@@ -1,6 +1,5 @@
 use std::{
-    net::{IpAddr, Ipv4Addr, SocketAddr, UdpSocket},
-    str::FromStr,
+    net::{IpAddr, SocketAddr, UdpSocket},
     time::SystemTime,
 };
 
@@ -12,17 +11,36 @@ use bevy_replicon::{
         ConnectionConfig,
     },
 };
+use serde::{Deserialize, Serialize};
+
+use super::network_error::NetworkError;
 
 #[derive(Resource)]
 pub struct Client {
-    pub id: u64,
+    pub id: ClientId,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ClientId(u64);
+
+impl From<bevy_replicon::renet::ClientId> for ClientId {
+    fn from(client_id: bevy_replicon::renet::ClientId) -> Self {
+        Self(client_id.raw())
+    }
+}
+
+impl PartialEq<&bevy_replicon::renet::ClientId> for ClientId {
+    fn eq(&self, other: &&bevy_replicon::renet::ClientId) -> bool {
+        self.0 == other.raw()
+    }
 }
 
 pub fn start_connection(
     mut commands: Commands,
-    address: &str,
     network_channels: Res<NetworkChannels>,
-) {
+    server_address: IpAddr,
+    server_port: u16,
+) -> Result<(), NetworkError> {
     let client = RenetClient::new(ConnectionConfig {
         server_channels_config: network_channels.get_server_configs(),
         client_channels_config: network_channels.get_client_configs(),
@@ -34,28 +52,25 @@ pub fn start_connection(
         .unwrap();
     let client_id = current_time.as_millis() as u64;
 
-    let ip = IpAddr::V4(
-        Ipv4Addr::from_str(address.split(':').next().expect("Missing IP address"))
-            .expect("Unable to parse IP address"),
-    );
-    let server_address = SocketAddr::new(
-        ip,
-        u16::from_str(address.split(':').last().unwrap_or("13001"))
-            .expect("Port is not a u16 number"),
-    );
-    let socket = UdpSocket::bind((ip, 0)).expect("Unable to bind socket");
+    let address = SocketAddr::new(server_address, server_port);
+    let socket =
+        UdpSocket::bind((server_address, 0)).map_err(|_| NetworkError::UnableBindSocket)?;
     let authentication = ClientAuthentication::Unsecure {
         client_id,
         protocol_id: super::PROTOCOL_ID,
-        server_addr: server_address,
+        server_addr: address,
         user_data: None,
     };
     let transport = NetcodeClientTransport::new(current_time, authentication, socket)
-        .expect("Unable to create client transport");
+        .map_err(|_| NetworkError::UnableCreateClientTransport)?;
 
-    info!("Client started on {}", server_address);
+    info!("Client started on {}", address);
 
-    commands.insert_resource(Client { id: client_id });
+    commands.insert_resource(Client {
+        id: ClientId(client_id),
+    });
     commands.insert_resource(client);
     commands.insert_resource(transport);
+
+    Ok(())
 }

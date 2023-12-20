@@ -12,7 +12,8 @@ use bevy_replicon::{
 use serde::{Deserialize, Serialize};
 
 use crate::network::{
-    client::Client, has_client, has_client_and_local, has_local_player, has_server,
+    client::{Client, ClientId},
+    has_client, has_client_and_local, has_local_player, has_server,
     replication::transform::SyncedTransform,
 };
 
@@ -51,29 +52,38 @@ impl Plugin for PlayerPlugin {
     }
 }
 
+#[derive(Copy, Clone)]
+pub enum PlayerKind {
+    Local,
+    Remote,
+}
+
 pub fn spawn(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
     player: Player,
-    is_local: bool,
+    kind: PlayerKind,
 ) {
     let transform = Transform::from_xyz(0.0, 3.0, 0.0);
     let mut c = commands.spawn((
         player,
-        SharedPlayerBundle::new(meshes, materials, transform, is_local),
+        SharedPlayerBundle::new(meshes, materials, transform, kind),
         Ignored::<Transform>::default(),
         Ignored::<CharacterVectors>::default(),
     ));
 
-    if is_local {
-        c.insert(LocalPlayerBundle::default());
-        commands.insert_resource(LocalPlayerResource);
-    } else {
-        c.insert(RemotePlayerBundle {
-            synced_transform: transform.into(),
-        });
-    }
+    match kind {
+        PlayerKind::Local => {
+            c.insert(LocalPlayerBundle::default());
+            commands.insert_resource(LocalPlayerResource);
+        }
+        PlayerKind::Remote => {
+            c.insert(RemotePlayerBundle {
+                synced_transform: transform.into(),
+            });
+        }
+    };
 }
 
 fn init_players(
@@ -90,7 +100,10 @@ fn init_players(
             &mut meshes,
             &mut materials,
             transform,
-            player.client_id == client.id,
+            match player.client_id == client.id {
+                true => PlayerKind::Local,
+                false => PlayerKind::Remote,
+            },
         ));
 
         if player.client_id == client.id {
@@ -106,7 +119,7 @@ fn init_players(
 
 #[derive(Component, Serialize, Deserialize)]
 pub struct Player {
-    pub client_id: u64,
+    pub client_id: ClientId,
 }
 
 #[derive(Component, Default)]
@@ -139,7 +152,7 @@ impl SharedPlayerBundle {
         meshes: &mut ResMut<Assets<Mesh>>,
         materials: &mut ResMut<Assets<StandardMaterial>>,
         transform: Transform,
-        is_local: bool,
+        kind: PlayerKind,
     ) -> SharedPlayerBundle {
         Self {
             transform: TransformBundle::from_transform(transform),
@@ -154,9 +167,9 @@ impl SharedPlayerBundle {
                 .into(),
             ),
             material: materials.add(
-                match is_local {
-                    true => Color::WHITE,
-                    false => Color::GRAY,
+                match kind {
+                    PlayerKind::Local => Color::WHITE,
+                    PlayerKind::Remote => Color::GRAY,
                 }
                 .into(),
             ),
@@ -193,7 +206,7 @@ fn control(mut query: Query<&mut CharacterVectors, With<LocalPlayer>>, input: Re
 
 #[derive(Deserialize, Event, Serialize)]
 struct TransformEvent {
-    client_id: u64,
+    client_id: ClientId,
     transform: SyncedTransform,
 }
 
@@ -244,7 +257,7 @@ fn transform_server_handler(
     for FromClient { client_id, event } in event.read() {
         let (_, mut transform) = query
             .iter_mut()
-            .find(|x| x.0.client_id == client_id.raw())
+            .find(|x| x.0.client_id == client_id)
             .expect("Expecting player to exist");
 
         *transform = event.transform.clone();
