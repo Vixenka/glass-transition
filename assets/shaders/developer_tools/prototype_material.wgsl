@@ -1,7 +1,7 @@
 #import bevy_render::instance_index::get_instance_index
 #import bevy_pbr::{
     mesh_functions::{get_model_matrix, mesh_position_local_to_clip, mesh_position_local_to_world, mesh_normal_local_to_world},
-    pbr_types::{pbr_input_new, STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT},
+    pbr_types::pbr_input_new,
     pbr_functions::{apply_pbr_lighting, calculate_view, prepare_world_normal},
     mesh_bindings::mesh,
     mesh_view_bindings::view,
