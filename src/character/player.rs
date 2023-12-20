@@ -13,6 +13,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::network::{
     client::Client, has_client, has_client_and_local, has_local_player, has_server,
+    replication::transform::SyncedTransform,
 };
 
 use super::{CharacterPhysicsBundle, CharacterVectors};
@@ -57,14 +58,10 @@ pub fn spawn(
     player: Player,
     is_local: bool,
 ) {
+    let transform = Transform::from_xyz(0.0, 3.0, 0.0);
     let mut c = commands.spawn((
         player,
-        SharedPlayerBundle::new(
-            meshes,
-            materials,
-            Transform::from_xyz(0.0, 3.0, 0.0),
-            is_local,
-        ),
+        SharedPlayerBundle::new(meshes, materials, transform, is_local),
         Ignored::<Transform>::default(),
         Ignored::<CharacterVectors>::default(),
     ));
@@ -72,6 +69,10 @@ pub fn spawn(
     if is_local {
         c.insert(LocalPlayerBundle::default());
         commands.insert_resource(LocalPlayerResource);
+    } else {
+        c.insert(RemotePlayerBundle {
+            synced_transform: transform.into(),
+        });
     }
 }
 
@@ -83,17 +84,22 @@ fn init_players(
     client: Res<Client>,
 ) {
     for (entity, player) in &spawned_players {
+        let transform = Transform::from_xyz(0.0, 3.0, 0.0);
         let mut c = commands.entity(entity);
         c.insert(SharedPlayerBundle::new(
             &mut meshes,
             &mut materials,
-            Transform::from_xyz(0.0, 3.0, 0.0),
+            transform,
             player.client_id == client.id,
         ));
 
         if player.client_id == client.id {
             c.insert(LocalPlayerBundle::default());
             commands.insert_resource(LocalPlayerResource);
+        } else {
+            c.insert(RemotePlayerBundle {
+                synced_transform: transform.into(),
+            });
         }
     }
 }
@@ -121,6 +127,11 @@ struct SharedPlayerBundle {
     mesh: Handle<Mesh>,
     material: Handle<StandardMaterial>,
     visibility: VisibilityBundle,
+}
+
+#[derive(Bundle)]
+struct RemotePlayerBundle {
+    synced_transform: SyncedTransform,
 }
 
 impl SharedPlayerBundle {
@@ -180,11 +191,10 @@ fn control(mut query: Query<&mut CharacterVectors, With<LocalPlayer>>, input: Re
     vectors.velocity.z *= damping;
 }
 
-#[derive(Default, Deserialize, Event, Serialize)]
+#[derive(Deserialize, Event, Serialize)]
 struct TransformEvent {
     client_id: u64,
-    translation: Vec3,
-    rotation: Quat,
+    transform: SyncedTransform,
     vectors: CharacterVectors,
 }
 
@@ -197,8 +207,7 @@ fn transform_server_sender(
             mode: SendMode::BroadcastExcept(SERVER_ID),
             event: TransformEvent {
                 client_id: player.client_id,
-                translation: transform.translation,
-                rotation: transform.rotation,
+                transform: (*transform).into(),
                 vectors: vectors.clone(),
             },
         });
@@ -207,7 +216,7 @@ fn transform_server_sender(
 
 fn transform_client_handler(
     mut event: EventReader<TransformEvent>,
-    mut query: Query<(&Player, &mut CharacterVectors, &mut Transform), Without<LocalPlayer>>,
+    mut query: Query<(&Player, &mut CharacterVectors, &mut SyncedTransform), Without<LocalPlayer>>,
 ) {
     for event in event.read() {
         // Ignore LocalPlayer.
@@ -215,7 +224,7 @@ fn transform_client_handler(
             query.iter_mut().find(|x| x.0.client_id == event.client_id)
         {
             *vectors = event.vectors.clone();
-            *transform = Transform::from_translation(event.translation);
+            *transform = event.transform.clone();
         }
     }
 }
@@ -227,15 +236,14 @@ fn transform_client_sender(
     let (vectors, transform, player) = query.single();
     event.send(TransformEvent {
         client_id: player.client_id,
-        translation: transform.translation,
-        rotation: transform.rotation,
+        transform: (*transform).into(),
         vectors: vectors.clone(),
     });
 }
 
 fn transform_server_handler(
     mut event: EventReader<FromClient<TransformEvent>>,
-    mut query: Query<(&Player, &mut CharacterVectors, &mut Transform)>,
+    mut query: Query<(&Player, &mut CharacterVectors, &mut SyncedTransform)>,
 ) {
     for FromClient { client_id, event } in event.read() {
         let (_, mut vectors, mut transform) = query
@@ -244,6 +252,6 @@ fn transform_server_handler(
             .expect("Expecting player to exist");
 
         *vectors = event.vectors.clone();
-        *transform = Transform::from_translation(event.translation);
+        *transform = event.transform.clone();
     }
 }

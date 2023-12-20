@@ -9,7 +9,9 @@ use bevy_egui::{
     egui::{self},
     EguiContexts,
 };
-use bevy_replicon::{renet::RenetServer, replicon_core::NetworkChannels, ReplicationPlugins};
+use bevy_replicon::{
+    renet::RenetServer, replicon_core::NetworkChannels, server::TickPolicy, ReplicationPlugins,
+};
 
 use crate::character::player::LocalPlayerResource;
 
@@ -18,18 +20,26 @@ use self::{
     server::{Server, ServerPlugin},
 };
 
+pub const MAX_TICK_RATE: u16 = 30;
 pub const PROTOCOL_ID: u64 = 0;
 
 pub struct NetworkPlugin;
 
 impl Plugin for NetworkPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(ReplicationPlugins)
-            .insert_resource(NetworkUiState {
-                address: String::from_str("127.0.0.1:13001").unwrap(),
-            })
-            .add_plugins((replication::ReplicationPlugin, ServerPlugin))
-            .add_systems(Update, ui);
+        app.add_plugins(
+            ReplicationPlugins
+                .build()
+                .set(bevy_replicon::server::ServerPlugin {
+                    tick_policy: TickPolicy::MaxTickRate(MAX_TICK_RATE),
+                    ..default()
+                }),
+        )
+        .insert_resource(NetworkUiState {
+            address: String::from_str("127.0.0.1:13001").unwrap(),
+        })
+        .add_plugins((replication::ReplicationPlugin, ServerPlugin))
+        .add_systems(Update, ui);
     }
 }
 
