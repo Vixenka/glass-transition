@@ -43,7 +43,7 @@ pub fn start_listening(
         ..default()
     });
 
-    let public_address = SocketAddr::new(Ipv4Addr::LOCALHOST.into(), server_port);
+    let public_address = SocketAddr::new(Ipv4Addr::UNSPECIFIED.into(), server_port);
     let socket = UdpSocket::bind(public_address).map_err(|_| NetworkError::UnableBindSocket)?;
     let server_config = ServerConfig {
         current_time: SystemTime::now()
