@@ -2,7 +2,6 @@ use std::f32::consts::PI;
 
 use bevy::{pbr::CascadeShadowConfigBuilder, prelude::*};
 use bevy_rapier3d::prelude::*;
-use character::player::PlayerBundle;
 use developer_tools::prototype_material::PrototypeMaterial;
 
 pub mod camera;
@@ -46,7 +45,6 @@ fn main() {
 fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
     mut prototype_materials: ResMut<Assets<PrototypeMaterial>>,
     assets: Res<AssetServer>,
 ) {
@@ -61,18 +59,14 @@ fn setup(
     ));
 
     commands.spawn((
-        PlayerBundle::new(Transform::from_xyz(0.0, 3.0, 0.0)),
-        meshes.add(
-            shape::Cylinder {
-                radius: character::player::RADIUS,
-                height: character::player::HALF_HEIGHT * 2.0,
-                resolution: 16,
-                segments: 1,
-            }
-            .into(),
-        ),
-        materials.add(Color::WHITE.into()),
-        VisibilityBundle::default(),
+        RigidBody::Fixed,
+        Collider::cuboid(2.0, 1.0, 0.5),
+        MaterialMeshBundle {
+            transform: Transform::from_xyz(0.0, 1.0, 5.0),
+            mesh: meshes.add(shape::Box::new(4.0, 2.0, 1.0).into()),
+            material: PrototypeMaterial::get(&mut prototype_materials, &assets, "wall"),
+            ..default()
+        },
     ));
 
     commands.spawn(DirectionalLightBundle {

@@ -29,6 +29,10 @@ fn move_camera(
     mut camera: Query<&mut Transform, (With<Camera>, Without<PlayerControls>)>,
     players: Query<&Transform, With<PlayerControls>>,
 ) {
+    if players.is_empty() {
+        return;
+    }
+
     let mut transform = camera.single_mut();
     let player_transform = players.single();
 

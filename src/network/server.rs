@@ -13,6 +13,8 @@ use bevy_replicon::{
     },
 };
 
+use crate::character::player::{self, Player};
+
 pub struct ServerPlugin;
 
 impl Plugin for ServerPlugin {
@@ -59,14 +61,36 @@ pub fn start_listening(
     commands.insert_resource(transport);
 }
 
-fn event_system(mut server_event: EventReader<ServerEvent>) {
+fn event_system(
+    mut server_event: EventReader<ServerEvent>,
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    query: Query<(Entity, &Player)>,
+) {
     for event in server_event.read() {
         match event {
             ServerEvent::ClientConnected { client_id } => {
-                info!("player: {client_id} Connected");
+                info!("Player {client_id} connected.");
+
+                player::spawn(
+                    &mut commands,
+                    &mut meshes,
+                    &mut materials,
+                    player::Player {
+                        client_id: client_id.raw(),
+                    },
+                );
             }
             ServerEvent::ClientDisconnected { client_id, reason } => {
-                info!("client {client_id} disconnected: {reason}");
+                info!("Player {client_id} disconnected: {reason}");
+
+                query
+                    .iter()
+                    .filter(|x| x.1.client_id == client_id.raw())
+                    .for_each(|x| {
+                        commands.entity(x.0).despawn_recursive();
+                    });
             }
         }
     }

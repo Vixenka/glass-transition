@@ -1,5 +1,13 @@
 use bevy::{math::vec3, prelude::*};
-use bevy_replicon::network_event::{client_event::ClientEventAppExt, EventType};
+use bevy_replicon::{
+    client::ClientSet,
+    network_event::{
+        client_event::{ClientEventAppExt, FromClient},
+        EventType,
+    },
+    replicon_core::replication_rules::AppReplicationExt,
+    server::has_authority,
+};
 use serde::{Deserialize, Serialize};
 
 use super::{CharacterPhysicsBundle, CharacterVectors};
@@ -11,36 +19,87 @@ pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_client_event::<MoveEvent>(EventType::Ordered)
-            .add_systems(FixedUpdate, control);
+        app.add_client_event::<ControlEvent>(EventType::Ordered)
+            .replicate::<Player>()
+            .add_systems(PreUpdate, init_players.after(ClientSet::Receive))
+            .add_systems(
+                FixedUpdate,
+                (control, control_handler.run_if(has_authority())),
+            );
     }
+}
+
+pub fn spawn(
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<StandardMaterial>>,
+    player: Player,
+) {
+    commands.spawn((
+        player,
+        TransformBundle::from_transform(Transform::from_xyz(0.0, 3.0, 0.0)),
+        PlayerSharedBundle::new(meshes, materials),
+    ));
+}
+
+fn init_players(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    spawned_players: Query<Entity, Added<Player>>,
+) {
+    for entity in &spawned_players {
+        commands
+            .entity(entity)
+            .insert(PlayerSharedBundle::new(&mut meshes, &mut materials));
+    }
+}
+
+#[derive(Component, Serialize, Deserialize)]
+pub struct Player {
+    pub client_id: u64,
 }
 
 #[derive(Component)]
 pub struct PlayerControls;
 
 #[derive(Bundle)]
-pub struct PlayerBundle {
-    pub transform: TransformBundle,
-    pub controls: PlayerControls,
-    pub character_physics: CharacterPhysicsBundle,
+struct PlayerSharedBundle {
+    controls: PlayerControls,
+    character_physics: CharacterPhysicsBundle,
+    mesh: Handle<Mesh>,
+    material: Handle<StandardMaterial>,
+    visibility: VisibilityBundle,
 }
 
-impl PlayerBundle {
-    pub fn new(transform: Transform) -> PlayerBundle {
+impl PlayerSharedBundle {
+    pub fn new(
+        meshes: &mut ResMut<Assets<Mesh>>,
+        materials: &mut ResMut<Assets<StandardMaterial>>,
+    ) -> PlayerSharedBundle {
         Self {
-            transform: TransformBundle::from_transform(transform),
             controls: PlayerControls,
             character_physics: CharacterPhysicsBundle::new(RADIUS, HALF_HEIGHT),
+            mesh: meshes.add(
+                shape::Cylinder {
+                    radius: RADIUS,
+                    height: HALF_HEIGHT * 2.0,
+                    resolution: 16,
+                    segments: 1,
+                }
+                .into(),
+            ),
+            material: materials.add(Color::WHITE.into()),
+            visibility: VisibilityBundle::default(),
         }
     }
 }
 
 #[derive(Debug, Default, Deserialize, Event, Serialize)]
-pub struct MoveEvent(Vec3);
+struct ControlEvent(Vec3);
 
-pub fn control(
-    mut move_event: EventWriter<MoveEvent>,
+fn control(
+    mut event: EventWriter<ControlEvent>,
     mut query: Query<(&PlayerControls, &mut CharacterVectors)>,
     input: Res<Input<KeyCode>>,
 ) {
@@ -69,7 +128,13 @@ pub fn control(
         vectors.velocity.z *= damping;
 
         if vectors.velocity != Vec3::ZERO {
-            move_event.send(MoveEvent(vectors.velocity));
+            event.send(ControlEvent(vectors.velocity));
         }
+    }
+}
+
+fn control_handler(mut event: EventReader<FromClient<ControlEvent>>) {
+    for FromClient { client_id, event } in event.read() {
+        //info!("Client {:?} sent {:?}", client_id, event);
     }
 }

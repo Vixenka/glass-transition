@@ -1,4 +1,5 @@
 pub mod client;
+pub mod replication;
 pub mod server;
 
 use std::str::FromStr;
@@ -22,11 +23,12 @@ pub struct NetworkPlugin;
 
 impl Plugin for NetworkPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(NetworkUiState {
-            address: String::from_str("127.0.0.1:13001").unwrap(),
-        })
-        .add_plugins((ReplicationPlugins, ServerPlugin))
-        .add_systems(Update, ui);
+        app.add_plugins(ReplicationPlugins)
+            .insert_resource(NetworkUiState {
+                address: String::from_str("127.0.0.1:13001").unwrap(),
+            })
+            .add_plugins((replication::ReplicationPlugin, ServerPlugin))
+            .add_systems(Update, ui);
     }
 }
 
