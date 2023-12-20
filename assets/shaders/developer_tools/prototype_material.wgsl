@@ -1,4 +1,11 @@
-#import bevy_pbr::mesh_functions::{get_model_matrix, mesh_position_local_to_clip}
+#import bevy_render::instance_index::get_instance_index
+#import bevy_pbr::{
+    mesh_functions::{get_model_matrix, mesh_position_local_to_clip, mesh_position_local_to_world, mesh_normal_local_to_world},
+    pbr_types::pbr_input_new,
+    pbr_functions::{apply_pbr_lighting, calculate_view, prepare_world_normal},
+    mesh_bindings::mesh,
+    mesh_view_bindings::view,
+}
 
 struct Vertex {
     @builtin(instance_index) instance_index: u32,
@@ -10,6 +17,9 @@ struct VertexOutput {
     @builtin(position) position: vec4f,
     @location(0) scaled_local_position: vec3f,
     @location(1) local_normal: vec3f,
+    @location(2) world_position: vec4f,
+    @location(3) world_normal: vec3f,
+    @location(4) @interpolate(flat) instance_index: u32,
 }
 
 fn extract_scale(model_matrix: mat4x4f) -> vec3f {
@@ -27,6 +37,9 @@ fn vertex(vertex: Vertex) -> VertexOutput {
     out.position = mesh_position_local_to_clip(model_matrix, vec4f(vertex.position, 1.0));
     out.scaled_local_position = vertex.position * extract_scale(model_matrix);
     out.local_normal = vertex.normal;
+    out.world_position = mesh_position_local_to_world(model_matrix, vec4f(vertex.position, 1.0));
+    out.world_normal = mesh_normal_local_to_world(vertex.normal, get_instance_index(vertex.instance_index));
+    out.instance_index = vertex.instance_index;
 
     return out;
 }
@@ -75,12 +88,26 @@ fn sample_triplanar(texture: texture_2d<f32>, texture_sampler: sampler, position
 }
 
 @fragment
-fn fragment(mesh: VertexOutput) -> @location(0) vec4f {
-    let position = mesh.scaled_local_position - floor(mesh.scaled_local_position);
-    let texel = sample_triplanar(base_texture, base_sampler, position, mesh.local_normal);
+fn fragment(in: VertexOutput, @builtin(front_facing) is_front: bool) -> @location(0) vec4f {
+    let position = in.scaled_local_position - floor(in.scaled_local_position);
+    let texel = sample_triplanar(base_texture, base_sampler, position, in.local_normal);
 
+    var color: vec4f;
     if texel.a < 0.4 {
-        return material.color;
+        color = material.color;
+    } else {
+        color = texel;
     }
-    return texel;
+
+    var pbr_input = pbr_input_new();
+    pbr_input.material.base_color = color;
+    pbr_input.world_position = in.world_position;
+    pbr_input.frag_coord = in.position;
+    pbr_input.flags = mesh[in.instance_index].flags;
+    pbr_input.is_orthographic = view.projection[3].w == 1.0;
+    pbr_input.V = calculate_view(in.world_position, pbr_input.is_orthographic);
+    pbr_input.world_normal = prepare_world_normal(in.world_normal, false, is_front);
+    pbr_input.N = normalize(pbr_input.world_normal);
+
+    return apply_pbr_lighting(pbr_input);
 }
