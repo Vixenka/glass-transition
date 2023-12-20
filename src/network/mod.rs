@@ -38,19 +38,13 @@ impl Plugin for NetworkPlugin {
                     ..default()
                 }),
         )
-        .insert_resource(NetworkUiState {
+        .insert_resource(MultiplayerUiState {
             address: String::from_str("127.0.0.1:13001").unwrap(),
             last_error: None,
         })
         .add_plugins((replication::ReplicationPlugin, ServerPlugin))
         .add_systems(Update, ui);
     }
-}
-
-#[derive(Resource)]
-pub struct NetworkUiState {
-    address: String,
-    last_error: Option<String>,
 }
 
 pub fn has_server(server: Option<Res<Server>>) -> bool {
@@ -69,13 +63,19 @@ pub fn has_client_and_local_player(
     client.is_some() && local_player.is_some()
 }
 
+#[derive(Resource)]
+pub struct MultiplayerUiState {
+    address: String,
+    last_error: Option<String>,
+}
+
 #[allow(clippy::too_many_arguments)]
 fn ui(
     meshes: ResMut<Assets<Mesh>>,
     materials: ResMut<Assets<StandardMaterial>>,
     mut ctx: EguiContexts,
     commands: Commands,
-    state: ResMut<NetworkUiState>,
+    state: ResMut<MultiplayerUiState>,
     network_channels: Res<NetworkChannels>,
     server: Option<Res<RenetServer>>,
     client: Option<Res<Client>>,
@@ -94,7 +94,7 @@ fn ui(
 fn ui_connect(
     meshes: ResMut<Assets<Mesh>>,
     materials: ResMut<Assets<StandardMaterial>>,
-    mut state: ResMut<NetworkUiState>,
+    mut state: ResMut<MultiplayerUiState>,
     commands: Commands,
     network_channels: Res<NetworkChannels>,
     ui: &mut egui::Ui,
@@ -113,7 +113,7 @@ fn ui_connect(
 fn ui_connect_buttons(
     meshes: ResMut<Assets<Mesh>>,
     materials: ResMut<Assets<StandardMaterial>>,
-    state: &ResMut<NetworkUiState>,
+    state: &ResMut<MultiplayerUiState>,
     commands: Commands,
     network_channels: Res<NetworkChannels>,
     ui: &mut egui::Ui,
