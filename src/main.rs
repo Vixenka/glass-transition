@@ -9,10 +9,12 @@ pub mod character;
 pub mod developer_tools;
 pub mod network;
 
+const TIMESTEP: f64 = 1.0 / 64.0;
+
 #[bevy_main]
 fn main() {
     App::new()
-        .add_plugins((
+        .add_plugins(
             DefaultPlugins
                 .set(WindowPlugin {
                     primary_window: Some(Window {
@@ -25,19 +27,25 @@ fn main() {
                     watch_for_changes_override: Some(true),
                     ..default()
                 }),
-            bevy_egui::EguiPlugin,
-            MaterialPlugin::<PrototypeMaterial>::default(),
-            RapierPhysicsPlugin::<()>::default()
-                .in_fixed_schedule()
-                .with_physics_scale(1.0),
-            RapierDebugRenderPlugin {
-                enabled: true,
-                ..default()
+        )
+        .insert_resource(RapierConfiguration {
+            timestep_mode: TimestepMode::Interpolated {
+                dt: TIMESTEP as f32,
+                time_scale: 1.0,
+                substeps: 4,
             },
-            network::NetworkPlugin,
-            camera::CameraPlugin,
-            character::CharacterPlugin,
-        ))
+            ..default()
+        })
+        .add_plugins(RapierPhysicsPlugin::<()>::default().with_physics_scale(1.0))
+        .add_plugins(RapierDebugRenderPlugin {
+            enabled: false,
+            ..default()
+        })
+        .add_plugins(MaterialPlugin::<PrototypeMaterial>::default())
+        .add_plugins(bevy_egui::EguiPlugin)
+        .add_plugins(network::NetworkPlugin)
+        .add_plugins(camera::CameraPlugin)
+        .add_plugins(character::CharacterPlugin)
         .add_systems(Startup, setup)
         .run();
 }
