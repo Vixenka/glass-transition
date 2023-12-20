@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::network::{
     client::{Client, ClientId},
-    has_client, has_client_and_local, has_local_player, has_server,
+    has_client, has_client_and_local_player, has_local_player, has_server,
     replication::transform::SyncedTransform,
 };
 
@@ -32,21 +32,21 @@ impl Plugin for PlayerPlugin {
             .add_systems(
                 PreUpdate,
                 (
-                    init_players.after(ClientSet::Receive).run_if(has_client()),
+                    init_players.after(ClientSet::Receive).run_if(has_client),
                     transform_server_handler
                         .after(ServerSet::Receive)
-                        .run_if(has_server()),
+                        .run_if(has_server),
                     transform_client_handler
                         .after(ClientSet::Receive)
-                        .run_if(has_client()),
+                        .run_if(has_client),
                 ),
             )
             .add_systems(
                 FixedUpdate,
                 (
-                    control.run_if(has_local_player()),
-                    transform_server_sender.run_if(has_server()),
-                    transform_client_sender.run_if(has_client_and_local()),
+                    control.run_if(has_local_player),
+                    transform_server_sender.run_if(has_server),
+                    transform_client_sender.run_if(has_client_and_local_player),
                 ),
             );
     }

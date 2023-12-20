@@ -53,21 +53,20 @@ pub struct NetworkUiState {
     last_error: Option<String>,
 }
 
-pub fn has_server() -> impl FnMut(Option<Res<Server>>) -> bool + Clone {
-    move |server| server.is_some()
+pub fn has_server(server: Option<Res<Server>>) -> bool {
+    server.is_some()
 }
-
-pub fn has_client() -> impl FnMut(Option<Res<Client>>) -> bool + Clone {
-    move |client| client.is_some()
+pub fn has_client(client: Option<Res<Client>>) -> bool {
+    client.is_some()
 }
-
-pub fn has_local_player() -> impl FnMut(Option<Res<LocalPlayerResource>>) -> bool + Clone {
-    move |local_player| local_player.is_some()
+pub fn has_local_player(local_player: Option<Res<LocalPlayerResource>>) -> bool {
+    local_player.is_some()
 }
-
-pub fn has_client_and_local(
-) -> impl FnMut(Option<Res<Client>>, Option<Res<LocalPlayerResource>>) -> bool + Clone {
-    move |client, local| client.is_some() && local.is_some()
+pub fn has_client_and_local_player(
+    client: Option<Res<Client>>,
+    local_player: Option<Res<LocalPlayerResource>>,
+) -> bool {
+    client.is_some() && local_player.is_some()
 }
 
 #[allow(clippy::too_many_arguments)]
