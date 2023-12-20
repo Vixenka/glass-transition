@@ -4,7 +4,6 @@
 ///
 /// In case you need this for seconds, use [`lerp_exponent_in_time`].
 pub fn lerp_exponent_in_frames(number_of_frames: f32, epsilon: f32) -> f32 {
-    dbg!(number_of_frames);
     1.0 - epsilon.powf(1.0 / number_of_frames)
 }
 

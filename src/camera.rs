@@ -37,6 +37,6 @@ fn move_camera(
     let target_position = player_transform.translation + Vec3::new(5.0, 5.0, 5.0);
     transform.translation = transform.translation.lerp(
         target_position,
-        dbg!(lerp_exponent_in_time(2.0, 0.0001, time.delta_seconds())),
+        lerp_exponent_in_time(2.0, 0.0001, time.delta_seconds()),
     );
 }
