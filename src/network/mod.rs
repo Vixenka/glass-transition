@@ -90,15 +90,15 @@ fn ui(
     server: Option<Res<RenetServer>>,
     client: Option<Res<Client>>,
 ) {
-    egui::Window::new("Multiplayer").show(ctx.ctx_mut(), |ui| {
-        if let Some(err) = &state.last_error {
-            ui.colored_label(Color32::RED, err);
-        }
+    if server.is_none() && client.is_none() {
+        egui::Window::new("Multiplayer").show(ctx.ctx_mut(), |ui| {
+            if let Some(err) = &state.last_error {
+                ui.colored_label(Color32::RED, err);
+            }
 
-        if server.is_none() && client.is_none() {
             ui_connect(meshes, materials, state, commands, network_channels, ui);
-        }
-    });
+        });
+    }
 }
 
 fn ui_connect(
