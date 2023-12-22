@@ -10,6 +10,9 @@ use self::{enemy::EnemyPlugin, player::PlayerPlugin};
 
 pub struct CharacterPlugin;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
+pub struct MoveCharacters;
+
 impl Plugin for CharacterPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((PlayerPlugin, EnemyPlugin))
@@ -18,7 +21,8 @@ impl Plugin for CharacterPlugin {
                 FixedUpdate,
                 (ground_characters, move_characters)
                     .chain()
-                    .before(PhysicsSet::StepSimulation),
+                    .before(PhysicsSet::StepSimulation)
+                    .in_set(MoveCharacters),
             );
     }
 }

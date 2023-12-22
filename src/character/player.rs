@@ -1,4 +1,5 @@
 use bevy::{math::vec3, prelude::*};
+use bevy_rapier3d::prelude::*;
 use bevy_replicon::{
     client::ClientSet,
     network_event::{
@@ -17,7 +18,7 @@ use crate::network::{
     replication::transform::SyncedTransform,
 };
 
-use super::{CharacterPhysicsBundle, CharacterVectors};
+use super::{CharacterPhysicsBundle, CharacterVectors, MoveCharacters};
 
 pub const RADIUS: f32 = 0.4;
 pub const HALF_HEIGHT: f32 = 0.4;
@@ -44,7 +45,7 @@ impl Plugin for PlayerPlugin {
             .add_systems(
                 FixedUpdate,
                 (
-                    control.run_if(has_local_player),
+                    control.run_if(has_local_player).before(MoveCharacters),
                     transform_server_sender.run_if(has_server),
                     transform_client_sender.run_if(has_client_and_local_player),
                 ),
