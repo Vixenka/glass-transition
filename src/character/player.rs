@@ -1,4 +1,4 @@
-use bevy::{math::vec3, prelude::*};
+use bevy::{ecs::system::EntityCommands, math::vec3, prelude::*};
 use bevy_replicon::{
     client::ClientSet,
     network_event::{
@@ -66,26 +66,13 @@ pub fn spawn(
     kind: PlayerKind,
 ) {
     let transform = Transform::from_xyz(0.0, 3.0, 0.0);
-    let mut c = commands.spawn((
+    let mut entity_commands = commands.spawn((
         player,
         SharedPlayerBundle::new(meshes, materials, transform, kind),
         Ignored::<Transform>::default(),
     ));
 
-    match kind {
-        PlayerKind::Local => {
-            c.insert(LocalPlayerBundle {
-                local_player: LocalPlayer,
-                character_physics: CharacterPhysicsBundle::new(HALF_HEIGHT, RADIUS),
-            });
-            commands.insert_resource(LocalPlayerResource);
-        }
-        PlayerKind::Remote => {
-            c.insert(RemotePlayerBundle {
-                synced_transform: transform.into(),
-            });
-        }
-    };
+    add_kind_dependent_components_to_players(&mut entity_commands, kind, transform);
 }
 
 fn init_players(
@@ -96,30 +83,45 @@ fn init_players(
     client: Res<Client>,
 ) {
     for (entity, player) in &spawned_players {
+        let kind = match player.client_id == client.id {
+            true => PlayerKind::Local,
+            false => PlayerKind::Remote,
+        };
+
         let transform = Transform::from_xyz(0.0, 3.0, 0.0);
-        let mut c = commands.entity(entity);
-        c.insert(SharedPlayerBundle::new(
+        let mut entity_commands = commands.entity(entity);
+        entity_commands.insert(SharedPlayerBundle::new(
             &mut meshes,
             &mut materials,
             transform,
-            match player.client_id == client.id {
-                true => PlayerKind::Local,
-                false => PlayerKind::Remote,
-            },
+            kind,
         ));
 
-        if player.client_id == client.id {
-            c.insert(LocalPlayerBundle {
+        add_kind_dependent_components_to_players(&mut entity_commands, kind, transform);
+    }
+}
+
+fn add_kind_dependent_components_to_players(
+    entity_commands: &mut EntityCommands,
+    kind: PlayerKind,
+    transform: Transform,
+) {
+    match kind {
+        PlayerKind::Local => {
+            entity_commands.insert(LocalPlayerBundle {
                 local_player: LocalPlayer,
                 character_physics: CharacterPhysicsBundle::new(HALF_HEIGHT, RADIUS),
             });
-            commands.insert_resource(LocalPlayerResource);
-        } else {
-            c.insert(RemotePlayerBundle {
+            entity_commands
+                .commands()
+                .insert_resource(LocalPlayerResource);
+        }
+        PlayerKind::Remote => {
+            entity_commands.insert(RemotePlayerBundle {
                 synced_transform: transform.into(),
             });
         }
-    }
+    };
 }
 
 #[derive(Component, Serialize, Deserialize)]
