@@ -31,14 +31,6 @@ fn main() {
                 }),
         )
         .add_plugins(bevy_egui::EguiPlugin)
-        .insert_resource(RapierConfiguration {
-            timestep_mode: TimestepMode::Interpolated {
-                dt: TIMESTEP as f32,
-                time_scale: 1.0,
-                substeps: 4,
-            },
-            ..default()
-        })
         .add_plugins(RapierPhysicsPlugin::<()>::default().with_physics_scale(1.0))
         .add_plugins(RapierDebugRenderPlugin {
             enabled: false,
