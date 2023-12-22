@@ -10,12 +10,20 @@ use self::{enemy::EnemyPlugin, player::PlayerPlugin};
 
 pub struct CharacterPlugin;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
+pub struct MoveCharacters;
+
 impl Plugin for CharacterPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((PlayerPlugin, EnemyPlugin))
             .replicate::<CharacterVectors>()
-            .add_systems(FixedUpdate, ground_characters)
-            .add_systems(FixedUpdate, move_characters);
+            .add_systems(
+                FixedUpdate,
+                (ground_characters, move_characters)
+                    .chain()
+                    .before(PhysicsSet::StepSimulation)
+                    .in_set(MoveCharacters),
+            );
     }
 }
 
