@@ -1,5 +1,4 @@
 use bevy::{math::vec3, prelude::*};
-use bevy_rapier3d::prelude::*;
 use bevy_replicon::{
     client::ClientSet,
     network_event::{
