@@ -1,5 +1,4 @@
 use bevy::{math::vec3, prelude::*};
-use bevy_rapier3d::prelude::*;
 use bevy_replicon::{
     client::ClientSet,
     network_event::{
@@ -7,8 +6,8 @@ use bevy_replicon::{
         server_event::{SendMode, ServerEventAppExt, ToClients},
         EventType,
     },
-    replicon_core::replication_rules::{AppReplicationExt, Ignored},
-    server::{ServerSet, SERVER_ID},
+    replicon_core::replication_rules::{AppReplicationExt, Ignored, Replication},
+    server::ServerSet,
 };
 use serde::{Deserialize, Serialize};
 
@@ -71,12 +70,14 @@ pub fn spawn(
         player,
         SharedPlayerBundle::new(meshes, materials, transform, kind),
         Ignored::<Transform>::default(),
-        Ignored::<CharacterVectors>::default(),
     ));
 
     match kind {
         PlayerKind::Local => {
-            c.insert(LocalPlayerBundle::default());
+            c.insert(LocalPlayerBundle {
+                local_player: LocalPlayer,
+                character_physics: CharacterPhysicsBundle::new(HALF_HEIGHT, RADIUS),
+            });
             commands.insert_resource(LocalPlayerResource);
         }
         PlayerKind::Remote => {
@@ -108,7 +109,10 @@ fn init_players(
         ));
 
         if player.client_id == client.id {
-            c.insert(LocalPlayerBundle::default());
+            c.insert(LocalPlayerBundle {
+                local_player: LocalPlayer,
+                character_physics: CharacterPhysicsBundle::new(HALF_HEIGHT, RADIUS),
+            });
             commands.insert_resource(LocalPlayerResource);
         } else {
             c.insert(RemotePlayerBundle {
@@ -129,18 +133,19 @@ pub struct LocalPlayer;
 #[derive(Resource)]
 pub struct LocalPlayerResource;
 
-#[derive(Bundle, Default)]
+#[derive(Bundle)]
 struct LocalPlayerBundle {
     local_player: LocalPlayer,
+    character_physics: CharacterPhysicsBundle,
 }
 
 #[derive(Bundle)]
 struct SharedPlayerBundle {
     transform: TransformBundle,
-    character_physics: CharacterPhysicsBundle,
     mesh: Handle<Mesh>,
     material: Handle<StandardMaterial>,
     visibility: VisibilityBundle,
+    replication: Replication,
 }
 
 #[derive(Bundle)]
@@ -157,7 +162,6 @@ impl SharedPlayerBundle {
     ) -> SharedPlayerBundle {
         Self {
             transform: TransformBundle::from_transform(transform),
-            character_physics: CharacterPhysicsBundle::new(RADIUS, HALF_HEIGHT),
             mesh: meshes.add(
                 shape::Cylinder {
                     radius: RADIUS,
@@ -175,6 +179,7 @@ impl SharedPlayerBundle {
                 .into(),
             ),
             visibility: VisibilityBundle::default(),
+            replication: Replication,
         }
     }
 }
@@ -222,7 +227,7 @@ fn transform_server_sender(
 ) {
     for (transform, player) in &mut query.iter() {
         event.send(ToClients {
-            mode: SendMode::BroadcastExcept(SERVER_ID),
+            mode: SendMode::Broadcast,
             event: TransformServerEvent {
                 client_id: player.client_id,
                 transform: (*transform).into(),
