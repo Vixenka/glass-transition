@@ -2,7 +2,7 @@ use std::f32::consts::PI;
 
 use bevy::{pbr::CascadeShadowConfigBuilder, prelude::*};
 use bevy_rapier3d::prelude::*;
-use developer_tools::{cheat_menu::CheatMenuPlugin, prototype_material::PrototypeMaterial};
+use developer_tools::prototype_material::PrototypeMaterial;
 
 pub mod camera;
 pub mod character;
@@ -10,11 +10,12 @@ pub mod developer_tools;
 pub mod math;
 pub mod network;
 
-const TIMESTEP: f64 = 1.0 / 64.0;
+const TIMESTEP: f64 = 1.0 / 60.0;
 
 #[bevy_main]
 fn main() {
     App::new()
+        .insert_resource(Time::<Fixed>::from_seconds(TIMESTEP))
         .add_plugins(
             DefaultPlugins
                 .set(WindowPlugin {
@@ -30,7 +31,6 @@ fn main() {
                 }),
         )
         .add_plugins(bevy_egui::EguiPlugin)
-        .add_plugins(network::NetworkPlugin)
         .insert_resource(RapierConfiguration {
             timestep_mode: TimestepMode::Interpolated {
                 dt: TIMESTEP as f32,
@@ -44,10 +44,10 @@ fn main() {
             enabled: false,
             ..default()
         })
-        .add_plugins(MaterialPlugin::<PrototypeMaterial>::default())
-        .add_plugins(CheatMenuPlugin)
+        .add_plugins(network::NetworkPlugin)
         .add_plugins(camera::CameraPlugin)
         .add_plugins(character::CharacterPlugin)
+        .add_plugins(developer_tools::DeveloperToolsPlugin)
         .add_systems(Startup, setup)
         .run();
 }

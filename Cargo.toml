@@ -12,6 +12,7 @@ bevy = { version = "0.12.1", features = ["file_watcher"] }
 bevy_rapier3d = { git = "https://github.com/liquidev/bevy_rapier", branch = "glass-transition-downstream" }
 bevy_egui = "0.24.0"
 bevy_replicon = "0.18.1"
+egui_plot = "0.24.1"
 random_color = "0.8.0"
 serde = "1.0.193"
 enum-iterator = "1.4.1"
