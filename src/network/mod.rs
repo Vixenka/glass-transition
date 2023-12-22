@@ -50,12 +50,22 @@ impl Plugin for NetworkPlugin {
 pub fn has_server(server: Option<Res<Server>>) -> bool {
     server.is_some()
 }
+
 pub fn has_client(client: Option<Res<Client>>) -> bool {
     client.is_some()
 }
+
 pub fn has_local_player(local_player: Option<Res<LocalPlayerResource>>) -> bool {
     local_player.is_some()
 }
+
+pub fn has_server_and_local_player(
+    server: Option<Res<Server>>,
+    local_player: Option<Res<LocalPlayerResource>>,
+) -> bool {
+    server.is_some() && local_player.is_some()
+}
+
 pub fn has_client_and_local_player(
     client: Option<Res<Client>>,
     local_player: Option<Res<LocalPlayerResource>>,

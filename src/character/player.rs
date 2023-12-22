@@ -26,8 +26,8 @@ pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_server_event::<TransformEvent>(EventType::Ordered)
-            .add_client_event::<TransformEvent>(EventType::Ordered)
+        app.add_server_event::<TransformServerEvent>(EventType::Ordered)
+            .add_client_event::<TransformClientEvent>(EventType::Ordered)
             .replicate::<Player>()
             .add_systems(
                 PreUpdate,
@@ -205,19 +205,24 @@ fn control(mut query: Query<&mut CharacterVectors, With<LocalPlayer>>, input: Re
 }
 
 #[derive(Deserialize, Event, Serialize)]
-struct TransformEvent {
+struct TransformServerEvent {
     client_id: ClientId,
     transform: SyncedTransform,
 }
 
+#[derive(Deserialize, Event, Serialize)]
+struct TransformClientEvent {
+    transform: SyncedTransform,
+}
+
 fn transform_server_sender(
-    mut event: EventWriter<ToClients<TransformEvent>>,
+    mut event: EventWriter<ToClients<TransformServerEvent>>,
     query: Query<(&Transform, &Player)>,
 ) {
     for (transform, player) in &mut query.iter() {
         event.send(ToClients {
             mode: SendMode::BroadcastExcept(SERVER_ID),
-            event: TransformEvent {
+            event: TransformServerEvent {
                 client_id: player.client_id,
                 transform: (*transform).into(),
             },
@@ -226,7 +231,7 @@ fn transform_server_sender(
 }
 
 fn transform_client_handler(
-    mut event: EventReader<TransformEvent>,
+    mut event: EventReader<TransformServerEvent>,
     mut query: Query<(&Player, &mut SyncedTransform), Without<LocalPlayer>>,
 ) {
     for event in event.read() {
@@ -240,18 +245,17 @@ fn transform_client_handler(
 }
 
 fn transform_client_sender(
-    mut event: EventWriter<TransformEvent>,
-    query: Query<(&Transform, &Player), With<LocalPlayer>>,
+    mut event: EventWriter<TransformClientEvent>,
+    query: Query<&Transform, With<LocalPlayer>>,
 ) {
-    let (transform, player) = query.single();
-    event.send(TransformEvent {
-        client_id: player.client_id,
+    let transform = query.single();
+    event.send(TransformClientEvent {
         transform: (*transform).into(),
     });
 }
 
 fn transform_server_handler(
-    mut event: EventReader<FromClient<TransformEvent>>,
+    mut event: EventReader<FromClient<TransformClientEvent>>,
     mut query: Query<(&Player, &mut SyncedTransform)>,
 ) {
     for FromClient { client_id, event } in event.read() {

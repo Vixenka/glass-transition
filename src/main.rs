@@ -2,7 +2,7 @@ use std::f32::consts::PI;
 
 use bevy::{pbr::CascadeShadowConfigBuilder, prelude::*};
 use bevy_rapier3d::prelude::*;
-use developer_tools::prototype_material::PrototypeMaterial;
+use developer_tools::{cheat_menu::CheatMenuPlugin, prototype_material::PrototypeMaterial};
 
 pub mod camera;
 pub mod character;
@@ -29,6 +29,8 @@ fn main() {
                     ..default()
                 }),
         )
+        .add_plugins(bevy_egui::EguiPlugin)
+        .add_plugins(network::NetworkPlugin)
         .insert_resource(RapierConfiguration {
             timestep_mode: TimestepMode::Interpolated {
                 dt: TIMESTEP as f32,
@@ -43,8 +45,7 @@ fn main() {
             ..default()
         })
         .add_plugins(MaterialPlugin::<PrototypeMaterial>::default())
-        .add_plugins(bevy_egui::EguiPlugin)
-        .add_plugins(network::NetworkPlugin)
+        .add_plugins(CheatMenuPlugin)
         .add_plugins(camera::CameraPlugin)
         .add_plugins(character::CharacterPlugin)
         .add_systems(Startup, setup)
