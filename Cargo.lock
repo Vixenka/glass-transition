@@ -824,7 +824,7 @@ checksum = "c77ec20c8fafcdc196508ef5ccb4f0400a8d193cb61f7b14a36ed9a25ad423cf"
 [[package]]
 name = "bevy_rapier3d"
 version = "0.23.0"
-source = "git+https://github.com/liquidev/bevy_rapier?branch=glass-transition-downstream#9f060aafeedf03a8e2c1aacd0f1f33f1192542c9"
+source = "git+https://github.com/liquidev/bevy_rapier?rev=5b1f4f56627fb1a1a715ccd7914d3775e31b8dd3#5b1f4f56627fb1a1a715ccd7914d3775e31b8dd3"
 dependencies = [
  "bevy",
  "bitflags 2.4.1",
