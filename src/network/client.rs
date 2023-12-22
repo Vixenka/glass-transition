@@ -41,8 +41,6 @@ pub fn start_connection(
     server_address: IpAddr,
     server_port: u16,
 ) -> Result<(), NetworkError> {
-    println!("Starting client...");
-
     let client = RenetClient::new(ConnectionConfig {
         server_channels_config: network_channels.get_server_configs(),
         client_channels_config: network_channels.get_client_configs(),

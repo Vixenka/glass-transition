@@ -1,6 +1,5 @@
-use bevy::prelude::*;
+use bevy::{ecs::system::EntityCommands, prelude::*};
 use bevy_replicon::replicon_core::replication_rules::AppReplicationExt;
-use enum_iterator::Sequence;
 use serde::{Deserialize, Serialize};
 
 use super::{player, CharacterPhysicsBundle};
@@ -10,31 +9,32 @@ pub struct EnemyPlugin;
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
         app.replicate::<Enemy>()
+            .replicate::<DummyEnemy>()
             .add_systems(PostUpdate, init_enemies);
     }
 }
 
-pub fn spawn(commands: &mut Commands, enemy: Enemy, transform: Transform) {
-    commands.spawn((enemy, transform));
+pub fn spawn<'w, 's, 'a>(
+    commands: &'a mut Commands<'w, 's>,
+    enemy: Enemy,
+    transform: Transform,
+) -> EntityCommands<'w, 's, 'a> {
+    commands.spawn((enemy, transform))
 }
 
 #[derive(Clone, Component, Deserialize, Serialize)]
-pub struct Enemy {
-    pub kind: EnemyKind,
-}
+pub struct Enemy;
 
-#[derive(Clone, Copy, Deserialize, Serialize, Sequence, Debug)]
-pub enum EnemyKind {
-    Dummy,
-}
+#[derive(Clone, Component, Deserialize, Serialize)]
+pub struct DummyEnemy;
 
 fn init_enemies(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    spawned: Query<(Entity, &Enemy), Added<Enemy>>,
+    spawned: Query<Entity, Added<Enemy>>,
 ) {
-    for (entity, enemy) in &spawned {
+    for entity in &spawned {
         commands.entity(entity).insert((
             GlobalTransform::IDENTITY,
             CharacterPhysicsBundle::new(player::RADIUS, player::HALF_HEIGHT),
@@ -47,12 +47,7 @@ fn init_enemies(
                 }
                 .into(),
             ),
-            materials.add(
-                match enemy.kind {
-                    EnemyKind::Dummy => Color::RED,
-                }
-                .into(),
-            ),
+            materials.add(Color::RED.into()),
             VisibilityBundle::default(),
         ));
     }

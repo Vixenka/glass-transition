@@ -9,11 +9,12 @@ use bevy_replicon::{
     },
     server::ServerSet,
 };
+use enum_iterator::Sequence;
 use serde::{Deserialize, Serialize};
 
 use crate::{
     character::{
-        enemy::{self, Enemy, EnemyKind},
+        enemy::{self, DummyEnemy, Enemy},
         player::LocalPlayer,
     },
     network::{has_local_player, has_server, replication::transform::SyncedTransform},
@@ -34,6 +35,11 @@ impl Plugin for CheatMenuPlugin {
     }
 }
 
+#[derive(Clone, Copy, Deserialize, Serialize, Sequence, Debug)]
+enum EnemyKind {
+    Dummy,
+}
+
 fn ui(
     mut ctx: EguiContexts,
     mut event: EventWriter<CommandEvent>,
@@ -44,8 +50,9 @@ fn ui(
             for kind in enum_iterator::all::<EnemyKind>() {
                 if ui.button(format!("{:?}", kind)).clicked() {
                     event.send(CommandEvent::Enemy((
-                        Enemy { kind },
-                        near_point(&query).into(),
+                        Enemy,
+                        kind,
+                        near_point(query.single()).into(),
                     )));
                 }
             }
@@ -53,14 +60,13 @@ fn ui(
     });
 }
 
-fn near_point(query: &Query<&Transform, With<LocalPlayer>>) -> Transform {
-    let player_transform = query.single();
+fn near_point(player_transform: &Transform) -> Transform {
     Transform::from_translation(player_transform.translation + player_transform.forward().mul(3.0))
 }
 
 #[derive(Deserialize, Event, Serialize)]
 enum CommandEvent {
-    Enemy((Enemy, SyncedTransform)),
+    Enemy((Enemy, EnemyKind, SyncedTransform)),
 }
 
 fn command_server_handler(
@@ -73,12 +79,15 @@ fn command_server_handler(
     } in event.read()
     {
         match event {
-            CommandEvent::Enemy((enemy, transform)) => {
+            CommandEvent::Enemy((enemy, kind, transform)) => {
                 enemy::spawn(
                     &mut commands,
                     enemy.clone(),
                     Transform::from(transform.clone()),
-                );
+                )
+                .insert(match kind {
+                    EnemyKind::Dummy => DummyEnemy,
+                });
             }
         }
     }
