@@ -20,12 +20,18 @@ use crate::{
     network::{has_local_player, has_server, replication::transform::SyncedTransform},
 };
 
-pub struct CheatMenuPlugin;
+use super::tool_enabled;
 
-impl Plugin for CheatMenuPlugin {
+pub struct SpawnPlugin;
+
+impl Plugin for SpawnPlugin {
     fn build(&self, app: &mut App) {
         app.add_client_event::<CommandEvent>(EventType::Unordered)
-            .add_systems(Update, (ui.run_if(has_local_player),))
+            .add_systems(
+                Update,
+                ui.run_if(has_local_player)
+                    .run_if(tool_enabled(|tools| tools.spawn)),
+            )
             .add_systems(
                 PreUpdate,
                 command_server_handler
@@ -45,18 +51,16 @@ fn ui(
     mut event: EventWriter<CommandEvent>,
     query: Query<&Transform, With<LocalPlayer>>,
 ) {
-    egui::Window::new("Cheat menu").show(ctx.ctx_mut(), |ui| {
-        ui.collapsing("Spawn enemies", |ui| {
-            for kind in enum_iterator::all::<EnemyKind>() {
-                if ui.button(format!("{:?}", kind)).clicked() {
-                    event.send(CommandEvent::Enemy((
-                        Enemy,
-                        kind,
-                        near_point(query.single()).into(),
-                    )));
-                }
+    egui::Window::new("Spawn").show(ctx.ctx_mut(), |ui| {
+        for kind in enum_iterator::all::<EnemyKind>() {
+            if ui.button(format!("{:?}", kind)).clicked() {
+                event.send(CommandEvent::Enemy((
+                    Enemy,
+                    kind,
+                    near_point(query.single()).into(),
+                )));
             }
-        });
+        }
     });
 }
 
