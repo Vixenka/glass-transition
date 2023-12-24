@@ -1,3 +1,4 @@
+pub mod appearance;
 pub mod enemy;
 pub mod player;
 
@@ -6,7 +7,7 @@ use bevy_rapier3d::prelude::*;
 use bevy_replicon::replicon_core::replication_rules::{AppReplicationExt, Replication};
 use serde::{Deserialize, Serialize};
 
-use self::{enemy::EnemyPlugin, player::PlayerPlugin};
+use self::{appearance::CharacterAppearancePlugin, enemy::EnemyPlugin, player::PlayerPlugin};
 
 pub struct CharacterPlugin;
 
@@ -15,7 +16,9 @@ pub struct MoveCharacters;
 
 impl Plugin for CharacterPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((PlayerPlugin, EnemyPlugin))
+        app.add_plugins(CharacterAppearancePlugin)
+            .add_plugins(PlayerPlugin)
+            .add_plugins(EnemyPlugin)
             .replicate::<CharacterVectors>()
             .add_systems(
                 FixedUpdate,

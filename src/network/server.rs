@@ -12,7 +12,10 @@ use bevy_replicon::{
     },
 };
 
-use crate::character::player::{self, Player};
+use crate::character::{
+    appearance::CharacterAppearanceAssets,
+    player::{self, Player},
+};
 
 use super::network_error::NetworkError;
 
@@ -32,9 +35,8 @@ pub struct Server;
 
 pub fn start_listening(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    network_channels: Res<NetworkChannels>,
+    character_appearances: &CharacterAppearanceAssets,
+    network_channels: &NetworkChannels,
     server_port: u16,
 ) -> Result<(), NetworkError> {
     let server = RenetServer::new(ConnectionConfig {
@@ -65,8 +67,7 @@ pub fn start_listening(
 
     player::spawn(
         &mut commands,
-        &mut meshes,
-        &mut materials,
+        character_appearances,
         player::Player {
             client_id: SERVER_ID.into(),
         },
@@ -79,8 +80,7 @@ pub fn start_listening(
 fn process_server_events(
     mut server_event: EventReader<ServerEvent>,
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    character_appearances: Res<CharacterAppearanceAssets>,
     query: Query<(Entity, &Player)>,
 ) {
     for event in server_event.read() {
@@ -90,8 +90,7 @@ fn process_server_events(
 
                 player::spawn(
                     &mut commands,
-                    &mut meshes,
-                    &mut materials,
+                    &character_appearances,
                     player::Player {
                         client_id: (*client_id).into(),
                     },

@@ -14,7 +14,7 @@ use bevy_replicon::{
     renet::RenetServer, replicon_core::NetworkChannels, server::TickPolicy, ReplicationPlugins,
 };
 
-use crate::character::player::LocalPlayerResource;
+use crate::character::{appearance::CharacterAppearanceAssets, player::LocalPlayerResource};
 
 use self::{
     client::Client,
@@ -81,11 +81,10 @@ pub struct MultiplayerUiState {
 
 #[allow(clippy::too_many_arguments)]
 fn ui(
-    meshes: ResMut<Assets<Mesh>>,
-    materials: ResMut<Assets<StandardMaterial>>,
+    character_appearances: Res<CharacterAppearanceAssets>,
     mut ctx: EguiContexts,
     commands: Commands,
-    state: ResMut<MultiplayerUiState>,
+    mut state: ResMut<MultiplayerUiState>,
     network_channels: Res<NetworkChannels>,
     server: Option<Res<RenetServer>>,
     client: Option<Res<Client>>,
@@ -96,23 +95,29 @@ fn ui(
                 ui.colored_label(Color32::RED, err);
             }
 
-            ui_connect(meshes, materials, state, commands, network_channels, ui);
+            ui_connect(
+                &mut state,
+                &character_appearances,
+                commands,
+                &network_channels,
+                ui,
+            );
         });
     }
 }
 
 fn ui_connect(
-    meshes: ResMut<Assets<Mesh>>,
-    materials: ResMut<Assets<StandardMaterial>>,
-    mut state: ResMut<MultiplayerUiState>,
+    state: &mut MultiplayerUiState,
+    character_appearances: &CharacterAppearanceAssets,
     commands: Commands,
-    network_channels: Res<NetworkChannels>,
+    network_channels: &NetworkChannels,
     ui: &mut egui::Ui,
 ) {
     ui.label("Address and port");
     ui.text_edit_singleline(&mut state.address);
 
-    if let Err(err) = ui_connect_buttons(meshes, materials, &state, commands, network_channels, ui)
+    if let Err(err) =
+        ui_connect_buttons(state, character_appearances, commands, network_channels, ui)
     {
         state.last_error = Some(err.to_string());
     } else {
@@ -121,11 +126,10 @@ fn ui_connect(
 }
 
 fn ui_connect_buttons(
-    meshes: ResMut<Assets<Mesh>>,
-    materials: ResMut<Assets<StandardMaterial>>,
-    state: &ResMut<MultiplayerUiState>,
+    state: &mut MultiplayerUiState,
+    character_appearances: &CharacterAppearanceAssets,
     commands: Commands,
-    network_channels: Res<NetworkChannels>,
+    network_channels: &NetworkChannels,
     ui: &mut egui::Ui,
 ) -> Result<(), NetworkError> {
     if ui.button("Connect").clicked() {
@@ -133,7 +137,7 @@ fn ui_connect_buttons(
         return client::start_connection(commands, network_channels, ip, port);
     } else if ui.button("Host game").clicked() {
         let (_ip, port) = parse_address_and_port(&state.address)?;
-        return server::start_listening(commands, meshes, materials, network_channels, port);
+        return server::start_listening(commands, character_appearances, network_channels, port);
     }
     Ok(())
 }

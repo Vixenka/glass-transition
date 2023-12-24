@@ -37,7 +37,7 @@ impl PartialEq<&bevy_replicon::renet::ClientId> for ClientId {
 
 pub fn start_connection(
     mut commands: Commands,
-    network_channels: Res<NetworkChannels>,
+    network_channels: &NetworkChannels,
     server_address: IpAddr,
     server_port: u16,
 ) -> Result<(), NetworkError> {
