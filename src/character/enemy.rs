@@ -2,7 +2,10 @@ use bevy::{ecs::system::EntityCommands, prelude::*};
 use bevy_replicon::replicon_core::replication_rules::AppReplicationExt;
 use serde::{Deserialize, Serialize};
 
-use super::{player, CharacterPhysicsBundle};
+use super::{
+    player::{self, interaction_point::InteractionPoint},
+    CharacterPhysicsBundle,
+};
 
 pub struct EnemyPlugin;
 
@@ -49,6 +52,7 @@ fn init_enemies(
             ),
             materials.add(Color::RED.into()),
             VisibilityBundle::default(),
+            InteractionPoint,
         ));
     }
 }
