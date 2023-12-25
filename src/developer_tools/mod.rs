@@ -3,6 +3,7 @@ use bevy_egui::{egui, EguiContexts};
 
 use self::prototype_material::PrototypeMaterial;
 
+pub mod interaction;
 pub mod prototype_material;
 pub mod spawn;
 pub mod time;
@@ -13,6 +14,7 @@ impl Plugin for DeveloperToolsPlugin {
     fn build(&self, app: &mut App) {
         // Plugins
         app.add_plugins(MaterialPlugin::<PrototypeMaterial>::default())
+            .add_plugins(interaction::InteractionPlugin)
             .add_plugins(time::TimePlugin)
             .add_plugins(spawn::SpawnPlugin);
 
@@ -31,6 +33,7 @@ impl Plugin for DeveloperToolsPlugin {
 pub struct DeveloperTools {
     pub hub: bool,
 
+    pub interaction: bool,
     pub spawn: bool,
     pub time: bool,
 }
@@ -51,6 +54,7 @@ fn hub_ui(mut tools: ResMut<DeveloperTools>, mut ctx: EguiContexts) {
     egui::Window::new("Developer Tools").show(ctx.ctx_mut(), |ui| {
         ui.horizontal_wrapped(|ui| {
             // Please keep these sorted alphabetically!
+            ui.toggle_value(&mut tools.interaction, "Interaction");
             ui.toggle_value(&mut tools.spawn, "Spawn");
             ui.toggle_value(&mut tools.time, "Time");
         });

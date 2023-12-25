@@ -1,3 +1,5 @@
+pub mod interaction_point;
+
 use bevy::{ecs::system::EntityCommands, math::vec3, pbr::NotShadowCaster, prelude::*};
 use bevy_replicon::{
     client::ClientSet,
@@ -29,7 +31,8 @@ pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_server_event::<TransformServerEvent>(EventType::Ordered)
+        app.add_plugins(interaction_point::InteractionPointPlugin)
+            .add_server_event::<TransformServerEvent>(EventType::Ordered)
             .add_client_event::<TransformClientEvent>(EventType::Ordered)
             .replicate::<Player>()
             .add_systems(
@@ -123,6 +126,7 @@ fn add_kind_dependent_components_to_players(
 #[derive(Component, Serialize, Deserialize)]
 pub struct Player {
     pub client_id: ClientId,
+    pub attached_camera: Option<Entity>,
 }
 
 #[derive(Component, Default)]

@@ -70,6 +70,7 @@ pub fn start_listening(
         character_appearances,
         player::Player {
             client_id: SERVER_ID.into(),
+            attached_camera: None,
         },
         player::PlayerKind::Local,
     );
@@ -93,6 +94,7 @@ fn process_server_events(
                     &character_appearances,
                     player::Player {
                         client_id: (*client_id).into(),
+                        attached_camera: None,
                     },
                     player::PlayerKind::Remote,
                 );
