@@ -1,10 +1,10 @@
 use bevy::{
-    math::vec2,
+    pbr::NotShadowCaster,
     prelude::*,
-    render::{mesh::Indices, render_resource::PrimitiveTopology, texture::ImageLoaderSettings},
+    render::{mesh::Indices, render_resource::PrimitiveTopology},
 };
 
-use crate::rendering::sprite::{SpriteMaterial, SpriteMaterialUniforms, StandardMaterialSprite};
+use crate::rendering::sprite::{SpriteMaterial, StandardMaterialSprite};
 
 pub struct CharacterAppearancePlugin;
 
@@ -21,15 +21,12 @@ pub struct CharacterAppearanceAssets {
     pub player_material: Handle<StandardMaterialSprite>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Component)]
-pub struct RotateTowardsCamera;
-
-#[derive(Debug, Bundle)]
+#[derive(Bundle)]
 pub struct CharacterAppearanceBundle {
     pub mesh: Handle<Mesh>,
     pub material: Handle<StandardMaterialSprite>,
     pub visibility: VisibilityBundle,
-    pub rotate_towards_camera: RotateTowardsCamera,
+    pub not_shadow_caster: NotShadowCaster,
 }
 
 fn setup(
@@ -68,20 +65,12 @@ fn setup(
 
         player_material: materials.add(StandardMaterialSprite {
             base: StandardMaterial {
-                base_color_texture: Some(asset_server.load_with_settings(
-                    "textures/character/player.png",
-                    |settings: &mut ImageLoaderSettings| {
-                        settings.is_srgb = true;
-                    },
-                )),
+                base_color_texture: Some(asset_server.load("textures/character/player.png")),
                 alpha_mode: AlphaMode::Mask(0.5),
+                perceptual_roughness: 1.0,
                 ..default()
             },
-            extension: SpriteMaterial {
-                uniforms: SpriteMaterialUniforms {
-                    billboard_size: vec2(1.0, 1.0),
-                },
-            },
+            extension: SpriteMaterial {},
         }),
     });
 }

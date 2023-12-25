@@ -1,8 +1,7 @@
 use bevy::{
     pbr::{ExtendedMaterial, MaterialExtension},
     prelude::*,
-    reflect::TypePath,
-    render::render_resource::{AsBindGroup, ShaderRef, ShaderType},
+    render::render_resource::{AsBindGroup, ShaderRef},
 };
 
 pub struct SpritePlugin;
@@ -15,16 +14,8 @@ impl Plugin for SpritePlugin {
 
 pub type StandardMaterialSprite = ExtendedMaterial<StandardMaterial, SpriteMaterial>;
 
-#[derive(Debug, Clone, Copy, PartialEq, ShaderType)]
-pub struct SpriteMaterialUniforms {
-    pub billboard_size: Vec2,
-}
-
 #[derive(Debug, Clone, Asset, AsBindGroup, TypePath)]
-pub struct SpriteMaterial {
-    #[uniform(100)]
-    pub uniforms: SpriteMaterialUniforms,
-}
+pub struct SpriteMaterial {}
 
 impl MaterialExtension for SpriteMaterial {
     fn vertex_shader() -> ShaderRef {

@@ -1,4 +1,4 @@
-use bevy::{ecs::system::EntityCommands, math::vec3, prelude::*};
+use bevy::{ecs::system::EntityCommands, math::vec3, pbr::NotShadowCaster, prelude::*};
 use bevy_replicon::{
     client::ClientSet,
     network_event::{
@@ -18,7 +18,7 @@ use crate::network::{
 };
 
 use super::{
-    appearance::{CharacterAppearanceAssets, CharacterAppearanceBundle, RotateTowardsCamera},
+    appearance::{CharacterAppearanceAssets, CharacterAppearanceBundle},
     CharacterPhysicsBundle, CharacterVectors, MoveCharacters,
 };
 
@@ -161,7 +161,7 @@ impl SharedPlayerBundle {
                 mesh: character_appearances.plane_mesh.clone(),
                 material: character_appearances.player_material.clone(),
                 visibility: default(),
-                rotate_towards_camera: RotateTowardsCamera,
+                not_shadow_caster: NotShadowCaster,
             },
         }
     }
