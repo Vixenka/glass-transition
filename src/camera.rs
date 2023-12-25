@@ -1,7 +1,9 @@
 use bevy::{prelude::*, render::camera::ScalingMode};
 
 use crate::{
-    character::player::LocalPlayer, math::lerp_exponent_in_time, network::has_local_player,
+    character::player::{LocalPlayer, Player},
+    math::lerp_exponent_in_time,
+    network::has_local_player,
 };
 
 pub struct CameraPlugin;
@@ -26,17 +28,20 @@ fn setup(mut commands: Commands) {
     });
 }
 
+#[allow(clippy::type_complexity)]
 fn move_camera(
     time: Res<Time>,
-    mut camera: Query<&mut Transform, (With<Camera>, Without<LocalPlayer>)>,
-    players: Query<&Transform, With<LocalPlayer>>,
+    mut camera: Query<(Entity, &mut Transform), (With<Camera>, Without<LocalPlayer>)>,
+    mut players: Query<(&mut Player, &Transform), With<LocalPlayer>>,
 ) {
-    let mut transform = camera.single_mut();
-    let player_transform = players.single();
+    let (camera_entity, mut transform) = camera.single_mut();
+    let (mut player, player_transform) = players.single_mut();
 
     let target_position = player_transform.translation + Vec3::new(5.0, 5.0, 5.0);
     transform.translation = transform.translation.lerp(
         target_position,
         lerp_exponent_in_time(2.0, 0.0001, time.delta_seconds()),
     );
+
+    player.attached_camera = Some(camera_entity);
 }
