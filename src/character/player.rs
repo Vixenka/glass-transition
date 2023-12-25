@@ -1,6 +1,6 @@
 pub mod interaction_point;
 
-use bevy::{ecs::system::EntityCommands, math::vec3, prelude::*};
+use bevy::{ecs::system::EntityCommands, math::vec3, pbr::NotShadowCaster, prelude::*};
 use bevy_replicon::{
     client::ClientSet,
     network_event::{
@@ -8,7 +8,7 @@ use bevy_replicon::{
         server_event::{SendMode, ServerEventAppExt, ToClients},
         EventType,
     },
-    replicon_core::replication_rules::{AppReplicationExt, Ignored, Replication},
+    replicon_core::replication_rules::{AppReplicationExt, Ignored},
     server::ServerSet,
 };
 use serde::{Deserialize, Serialize};
@@ -19,7 +19,10 @@ use crate::network::{
     replication::transform::SyncedTransform,
 };
 
-use super::{CharacterPhysicsBundle, CharacterVectors, MoveCharacters};
+use super::{
+    appearance::{CharacterAppearanceAssets, CharacterAppearanceBundle},
+    CharacterPhysicsBundle, CharacterVectors, MoveCharacters,
+};
 
 pub const RADIUS: f32 = 0.4;
 pub const HALF_HEIGHT: f32 = 0.4;
@@ -63,15 +66,14 @@ pub enum PlayerKind {
 
 pub fn spawn(
     commands: &mut Commands,
-    meshes: &mut ResMut<Assets<Mesh>>,
-    materials: &mut ResMut<Assets<StandardMaterial>>,
+    character_appearances: &CharacterAppearanceAssets,
     player: Player,
     kind: PlayerKind,
 ) {
     let transform = Transform::from_xyz(0.0, 3.0, 0.0);
     let mut entity_commands = commands.spawn((
         player,
-        SharedPlayerBundle::new(meshes, materials, transform, kind),
+        SharedPlayerBundle::new(character_appearances, transform),
         Ignored::<Transform>::default(),
     ));
 
@@ -80,8 +82,7 @@ pub fn spawn(
 
 fn init_players(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    character_appearances: Res<CharacterAppearanceAssets>,
     spawned_players: Query<(Entity, &Player), Added<Player>>,
     client: Res<Client>,
 ) {
@@ -92,15 +93,10 @@ fn init_players(
         };
 
         let transform = Transform::from_xyz(0.0, 3.0, 0.0);
-        let mut entity_commands = commands.entity(entity);
-        entity_commands.insert(SharedPlayerBundle::new(
-            &mut meshes,
-            &mut materials,
-            transform,
-            kind,
-        ));
+        let mut c = commands.entity(entity);
+        let entity_commands = c.insert(SharedPlayerBundle::new(&character_appearances, transform));
 
-        add_kind_dependent_components_to_players(&mut entity_commands, kind, transform);
+        add_kind_dependent_components_to_players(entity_commands, kind, transform);
     }
 }
 
@@ -148,10 +144,8 @@ struct LocalPlayerBundle {
 #[derive(Bundle)]
 struct SharedPlayerBundle {
     transform: TransformBundle,
-    mesh: Handle<Mesh>,
-    material: Handle<StandardMaterial>,
-    visibility: VisibilityBundle,
-    replication: Replication,
+    character_physics: CharacterPhysicsBundle,
+    character_appearance: CharacterAppearanceBundle,
 }
 
 #[derive(Bundle)]
@@ -161,31 +155,18 @@ struct RemotePlayerBundle {
 
 impl SharedPlayerBundle {
     pub fn new(
-        meshes: &mut ResMut<Assets<Mesh>>,
-        materials: &mut ResMut<Assets<StandardMaterial>>,
+        character_appearances: &CharacterAppearanceAssets,
         transform: Transform,
-        kind: PlayerKind,
     ) -> SharedPlayerBundle {
         Self {
             transform: TransformBundle::from_transform(transform),
-            mesh: meshes.add(
-                shape::Cylinder {
-                    radius: RADIUS,
-                    height: HALF_HEIGHT * 2.0,
-                    resolution: 16,
-                    segments: 1,
-                }
-                .into(),
-            ),
-            material: materials.add(
-                match kind {
-                    PlayerKind::Local => Color::WHITE,
-                    PlayerKind::Remote => Color::GRAY,
-                }
-                .into(),
-            ),
-            visibility: VisibilityBundle::default(),
-            replication: Replication,
+            character_physics: CharacterPhysicsBundle::new(RADIUS, HALF_HEIGHT),
+            character_appearance: CharacterAppearanceBundle {
+                mesh: character_appearances.plane_mesh.clone(),
+                material: character_appearances.player_material.clone(),
+                visibility: default(),
+                not_shadow_caster: NotShadowCaster,
+            },
         }
     }
 }

@@ -9,6 +9,7 @@ pub mod character;
 pub mod developer_tools;
 pub mod math;
 pub mod network;
+pub mod rendering;
 
 const TIMESTEP: f64 = 1.0 / 60.0;
 
@@ -28,7 +29,8 @@ fn main() {
                 .set(AssetPlugin {
                     watch_for_changes_override: Some(true),
                     ..default()
-                }),
+                })
+                .set(ImagePlugin::default_nearest()),
         )
         .add_plugins(bevy_egui::EguiPlugin)
         .add_plugins(RapierPhysicsPlugin::<()>::default().with_physics_scale(1.0))
@@ -36,6 +38,7 @@ fn main() {
             enabled: false,
             ..default()
         })
+        .add_plugins(rendering::RenderingPlugin)
         .add_plugins(network::NetworkPlugin)
         .add_plugins(camera::CameraPlugin)
         .add_plugins(character::CharacterPlugin)
