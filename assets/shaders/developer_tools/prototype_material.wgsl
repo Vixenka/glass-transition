@@ -7,6 +7,8 @@
     mesh_view_bindings::view,
 }
 
+#import "shaders/math.wgsl"::extract_scale
+
 struct Vertex {
     @builtin(instance_index) instance_index: u32,
     @location(0) position: vec3f,
@@ -20,13 +22,6 @@ struct VertexOutput {
     @location(2) world_position: vec4f,
     @location(3) world_normal: vec3f,
     @location(4) @interpolate(flat) instance_index: u32,
-}
-
-fn extract_scale(model_matrix: mat4x4f) -> vec3f {
-    let x = vec3f(model_matrix[0][0], model_matrix[0][1], model_matrix[0][2]);
-    let y = vec3f(model_matrix[1][0], model_matrix[1][1], model_matrix[1][2]);
-    let z = vec3f(model_matrix[2][0], model_matrix[2][1], model_matrix[2][2]);
-    return vec3f(length(x), length(y), length(z));
 }
 
 @vertex

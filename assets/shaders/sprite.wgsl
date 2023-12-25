@@ -8,11 +8,34 @@
 }
 #import bevy_render::instance_index::get_instance_index
 
+#import "shaders/math.wgsl"::extract_scale
+
 struct Billboard {
-    size: vec2f,
+    world_position: vec4f,
+    position: vec4f,
+    normal: vec3f,
 }
 
-@group(1) @binding(100) var<uniform> billboard: Billboard;
+fn calculate_billboard(vertex_position: vec3f, view: mat4x4f, model: mat4x4f) -> Billboard {
+    let camera_right = vec3f(view[0][0], view[1][0], view[2][0]);
+    let camera_up = vec3f(view[0][1], view[1][1], view[2][1]);
+    let camera_front = vec3f(view[0][2], view[1][2], view[2][2]);
+
+    let billboard_center = model * vec4f(0.0, 0.0, 0.0, 1.0);
+    let billboard_size = extract_scale(model);
+
+    let world_space_vertex_position = billboard_center.xyz +
+        camera_right * vertex_position.x * billboard_size.x +
+        camera_up * vertex_position.y * billboard_size.y;
+
+    let view_proj = mesh_view_bindings::view.projection * view;
+
+    let world_position = vec4f(world_space_vertex_position, 0.0);
+    let position = mesh_view_bindings::view.view_proj * vec4(world_position.xyz, 1.0);
+    let normal = normalize(camera_front);
+
+    return Billboard(world_position, position, normal);
+}
 
 @vertex
 fn vertex(vertex_no_morph: Vertex) -> VertexOutput {
@@ -22,34 +45,17 @@ fn vertex(vertex_no_morph: Vertex) -> VertexOutput {
 
     // Use vertex_no_morph.instance_index instead of vertex.instance_index to work around a wgpu dx12 bug.
     // See https://github.com/gfx-rs/naga/issues/2416 .
-    var model = mesh_functions::get_model_matrix(vertex_no_morph.instance_index);
+    let model = mesh_functions::get_model_matrix(vertex_no_morph.instance_index);
 
-    let view = mesh_view_bindings::view.inverse_view;
-    let camera_right = vec3f(view[0][0], view[1][0], view[2][0]);
-    let camera_up = vec3f(view[0][1], view[1][1], view[2][1]);
-    let camera_front = vec3f(view[0][2], view[1][2], view[2][2]);
+    let billboard = calculate_billboard(vertex.position, mesh_view_bindings::view.inverse_view, model);
 
 #ifdef VERTEX_NORMALS
-    out.world_normal = mesh_functions::mesh_normal_local_to_world(
-        normalize(camera_front),
-        // Use vertex_no_morph.instance_index instead of vertex.instance_index to work around a wgpu dx12 bug.
-        // See https://github.com/gfx-rs/naga/issues/2416
-        get_instance_index(vertex_no_morph.instance_index)
-    );
+    out.world_normal = billboard.normal;
 #endif
 
 #ifdef VERTEX_POSITIONS
-
-    let billboard_center = model * vec4f(0.0, 0.0, 0.0, 1.0);
-
-    let world_space_vertex_position = billboard_center.xyz +
-        camera_right * vertex.position.x * billboard.size.x +
-        camera_up * vertex.position.y * billboard.size.y;
-
-    let view_proj = mesh_view_bindings::view.projection * view;
-
-    out.world_position = vec4f(world_space_vertex_position, 0.0);
-    out.position = mesh_view_bindings::view.view_proj * vec4(out.world_position.xyz, 1.0);
+    out.world_position = billboard.world_position;
+    out.position = billboard.position;
 #endif
 
 #ifdef VERTEX_UVS
@@ -84,15 +90,4 @@ fn vertex(vertex_no_morph: Vertex) -> VertexOutput {
 #endif
 
     return out;
-}
-
-@fragment
-fn fragment(
-    mesh: VertexOutput,
-) -> @location(0) vec4<f32> {
-#ifdef VERTEX_COLORS
-    return mesh.color;
-#else
-    return vec4<f32>(1.0, 0.0, 1.0, 1.0);
-#endif
 }
