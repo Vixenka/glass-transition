@@ -2165,6 +2165,8 @@ dependencies = [
  "enum-iterator",
  "random_color",
  "serde",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]

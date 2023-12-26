@@ -16,6 +16,8 @@ egui_plot = "0.24.1"
 random_color = "0.8.0"
 serde = "1.0.193"
 enum-iterator = "1.4.1"
+tracing = "0.1.40"
+tracing-subscriber = "0.3.1"
 
 [profile.dev.package."*"]
 opt-level = 3

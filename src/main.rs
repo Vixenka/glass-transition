@@ -1,8 +1,9 @@
-use std::f32::consts::PI;
+use std::{f32::consts::PI, fs::File};
 
-use bevy::{pbr::CascadeShadowConfigBuilder, prelude::*};
+use bevy::{log::LogPlugin, pbr::CascadeShadowConfigBuilder, prelude::*};
 use bevy_rapier3d::prelude::*;
 use developer_tools::prototype_material::PrototypeMaterial;
+use tracing_subscriber::{prelude::*, EnvFilter};
 
 pub mod camera;
 pub mod character;
@@ -14,6 +15,31 @@ const TIMESTEP: f64 = 1.0 / 60.0;
 
 #[bevy_main]
 fn main() {
+    tracing_subscriber::registry()
+        .with(
+            tracing_subscriber::fmt::layer()
+                .without_time()
+                .with_writer(std::io::stderr)
+                .with_filter(
+                    EnvFilter::builder()
+                        .with_env_var("GT_LOG")
+                        .try_from_env()
+                        .unwrap_or_else(|_| EnvFilter::new("info,wgpu=error,naga=warn")),
+                ),
+        )
+        .with(File::create("glass-transition.log").ok().map(|file| {
+            tracing_subscriber::fmt::layer()
+                .with_ansi(false)
+                .with_writer(file)
+                .with_filter(
+                    EnvFilter::builder()
+                        .with_env_var("GT_FILE_LOG")
+                        .try_from_env()
+                        .unwrap_or_else(|_| EnvFilter::new("info,wgpu=error,naga=warn")),
+                )
+        }))
+        .init();
+
     App::new()
         .insert_resource(Time::<Fixed>::from_seconds(TIMESTEP))
         .add_plugins(
@@ -28,7 +54,8 @@ fn main() {
                 .set(AssetPlugin {
                     watch_for_changes_override: Some(true),
                     ..default()
-                }),
+                })
+                .disable::<LogPlugin>(),
         )
         .add_plugins(bevy_egui::EguiPlugin)
         .add_plugins(RapierPhysicsPlugin::<()>::default().with_physics_scale(1.0))
