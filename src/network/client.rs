@@ -1,4 +1,5 @@
 use std::{
+    fmt,
     net::{IpAddr, SocketAddr, UdpSocket},
     time::SystemTime,
 };
@@ -22,6 +23,12 @@ pub struct Client {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ClientId(u64);
+
+impl fmt::Display for ClientId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "#{}", self.0)
+    }
+}
 
 impl From<bevy_replicon::renet::ClientId> for ClientId {
     fn from(client_id: bevy_replicon::renet::ClientId) -> Self {

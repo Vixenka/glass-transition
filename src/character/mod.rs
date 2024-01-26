@@ -30,6 +30,7 @@ impl Plugin for CharacterPlugin {
 #[derive(Component, Clone, Default, Serialize, Deserialize)]
 pub struct CharacterVectors {
     pub velocity: Vec3,
+    pub damping_time: f32,
 }
 
 #[derive(Bundle)]

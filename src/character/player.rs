@@ -1,6 +1,9 @@
 pub mod interaction_point;
 
+use std::fmt;
+
 use bevy::{ecs::system::EntityCommands, math::vec3, prelude::*};
+use bevy_egui::egui::WidgetText;
 use bevy_replicon::{
     client::ClientSet,
     network_event::{
@@ -133,6 +136,18 @@ pub struct Player {
     pub attached_camera: Option<Entity>,
 }
 
+impl fmt::Display for Player {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Player {}", self.client_id)
+    }
+}
+
+impl From<&Player> for WidgetText {
+    fn from(value: &Player) -> Self {
+        format!("{}", value).into()
+    }
+}
+
 #[derive(Component, Default)]
 pub struct LocalPlayer;
 
@@ -190,9 +205,13 @@ impl SharedPlayerBundle {
     }
 }
 
-fn control(mut query: Query<&mut CharacterVectors, With<LocalPlayer>>, input: Res<Input<KeyCode>>) {
+fn control(
+    mut query: Query<&mut CharacterVectors, With<LocalPlayer>>,
+    input: Res<Input<KeyCode>>,
+    time: Res<Time>,
+) {
     let mut vectors = query.single_mut();
-    vectors.velocity += vec3(0.0, -0.005, 0.0);
+    vectors.velocity += vec3(0.0, -0.005 * 60.0 * time.delta_seconds(), 0.0);
 
     let mut movement = Vec3::ZERO;
     if input.pressed(KeyCode::A) {
@@ -207,13 +226,18 @@ fn control(mut query: Query<&mut CharacterVectors, With<LocalPlayer>>, input: Re
     if input.pressed(KeyCode::W) {
         movement += vec3(-1.0, 0.0, -1.0);
     }
-    let speed = 0.015;
+    let speed = 0.015 * 60.0 * time.delta_seconds();
     movement = movement.normalize_or_zero() * speed;
     vectors.velocity += movement;
 
     let damping = 0.8;
-    vectors.velocity.x *= damping;
-    vectors.velocity.z *= damping;
+
+    let t = 1.0 / 60.0;
+    while time.elapsed_seconds() - vectors.damping_time > t {
+        vectors.damping_time += t;
+        vectors.velocity.x *= damping;
+        vectors.velocity.z *= damping;
+    }
 }
 
 #[derive(Deserialize, Event, Serialize)]
