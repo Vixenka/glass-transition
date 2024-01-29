@@ -205,13 +205,9 @@ impl SharedPlayerBundle {
     }
 }
 
-fn control(
-    mut query: Query<&mut CharacterVectors, With<LocalPlayer>>,
-    input: Res<Input<KeyCode>>,
-    time: Res<Time>,
-) {
+fn control(mut query: Query<&mut CharacterVectors, With<LocalPlayer>>, input: Res<Input<KeyCode>>) {
     let mut vectors = query.single_mut();
-    vectors.velocity += vec3(0.0, -0.005 * 60.0 * time.delta_seconds(), 0.0);
+    vectors.velocity += vec3(0.0, -0.005, 0.0);
 
     let mut movement = Vec3::ZERO;
     if input.pressed(KeyCode::A) {
@@ -226,18 +222,13 @@ fn control(
     if input.pressed(KeyCode::W) {
         movement += vec3(-1.0, 0.0, -1.0);
     }
-    let speed = 0.015 * 60.0 * time.delta_seconds();
+    let speed = 0.015;
     movement = movement.normalize_or_zero() * speed;
     vectors.velocity += movement;
 
     let damping = 0.8;
-
-    let t = 1.0 / 60.0;
-    while time.elapsed_seconds() - vectors.damping_time > t {
-        vectors.damping_time += t;
-        vectors.velocity.x *= damping;
-        vectors.velocity.z *= damping;
-    }
+    vectors.velocity.x *= damping;
+    vectors.velocity.z *= damping;
 }
 
 #[derive(Deserialize, Event, Serialize)]

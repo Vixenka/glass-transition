@@ -5,6 +5,7 @@ use bevy_egui::{
     egui::{self, Color32},
     EguiContexts,
 };
+use bevy_rapier3d::plugin::PhysicsSet;
 use egui_plot::{Legend, Line, Plot, PlotPoints, PlotUi};
 
 use crate::character::player::{LocalPlayer, Player};
@@ -17,7 +18,8 @@ impl Plugin for PlayerPositionPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<PlayerPositionGraph>().add_systems(
             Update,
-            ui.run_if(tool_enabled(|tools| tools.player_position)),
+            ui.after(PhysicsSet::Writeback)
+                .run_if(tool_enabled(|tools| tools.player_position)),
         );
     }
 }
@@ -133,6 +135,10 @@ fn write_graph(ui: &mut egui::Ui, data: &VecDeque<Vec3>, heading: &str, id: &str
             write_info(ui, data, 0, "X", Color32::RED);
             write_info(ui, data, 1, "Y", Color32::GREEN);
             write_info(ui, data, 2, "Z", Color32::BLUE);
+
+            let average =
+                (data.iter().map(|x| x.length_squared()).sum::<f32>() / data.len() as f32).sqrt();
+            ui.label(format!("Average: {:.2} mm", average * 1000.0));
         });
     });
 }
@@ -162,6 +168,6 @@ fn write_info(
 ) {
     ui.colored_label(
         color,
-        format!("{text}: {:.2}", data.back().unwrap()[element] * 1000.0),
+        format!("{text}: {:.2} mm", data.back().unwrap()[element] * 1000.0),
     );
 }

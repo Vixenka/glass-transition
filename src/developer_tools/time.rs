@@ -80,7 +80,7 @@ fn ui(
         ui.horizontal(|ui| {
             let mut timestep_hz = 1.0 / fixed_time.timestep().as_secs_f64();
             ui.label("Timestep");
-            ui.add(Slider::new(&mut timestep_hz, 8.0..=144.0));
+            ui.add(Slider::new(&mut timestep_hz, 8.0..=260.0));
             ui.end_row();
             fixed_time.set_timestep_hz(timestep_hz);
         });
@@ -90,7 +90,7 @@ fn ui(
                 .include_x(0.0)
                 .include_x(time_graph.fixed_delta_time.len() as f64)
                 .include_y(0.0)
-                .include_y(144.0)
+                .include_y(50.0)
                 .view_aspect(3.0)
                 .height(128.0)
                 .legend(Legend::default())
