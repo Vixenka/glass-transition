@@ -824,7 +824,7 @@ checksum = "c77ec20c8fafcdc196508ef5ccb4f0400a8d193cb61f7b14a36ed9a25ad423cf"
 [[package]]
 name = "bevy_rapier3d"
 version = "0.23.0"
-source = "git+https://github.com/liquidev/bevy_rapier?rev=5b1f4f56627fb1a1a715ccd7914d3775e31b8dd3#5b1f4f56627fb1a1a715ccd7914d3775e31b8dd3"
+source = "git+https://github.com/liquidev/bevy_rapier?rev=8dfab9c465580297601236bed58daf7c0de77ab5#8dfab9c465580297601236bed58daf7c0de77ab5"
 dependencies = [
  "bevy",
  "bitflags 2.4.1",
@@ -3013,6 +3013,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "num-derive"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cfb77679af88f8b125209d354a202862602672222e7f2313fdd6dc349bad4712"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.41",
+]
+
+[[package]]
 name = "num-integer"
 version = "0.1.45"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3168,7 +3179,7 @@ dependencies = [
  "jni 0.20.0",
  "ndk",
  "ndk-context",
- "num-derive",
+ "num-derive 0.3.3",
  "num-traits",
  "oboe-sys",
 ]
@@ -3274,9 +3285,9 @@ dependencies = [
 
 [[package]]
 name = "parry3d"
-version = "0.13.5"
+version = "0.13.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b55dc0e6db79bddbc5fd583569f7356cdcc63e1e9b2b93a9ab70dd8e717160e0"
+checksum = "13d0bdaf533851feec5cba9af11cefcc753ecefba05f758cf6abe886086bc3f5"
 dependencies = [
  "approx",
  "arrayvec",
@@ -3284,7 +3295,7 @@ dependencies = [
  "downcast-rs",
  "either",
  "nalgebra",
- "num-derive",
+ "num-derive 0.4.1",
  "num-traits",
  "rustc-hash",
  "simba",
@@ -3481,7 +3492,7 @@ dependencies = [
  "crossbeam",
  "downcast-rs",
  "nalgebra",
- "num-derive",
+ "num-derive 0.3.3",
  "num-traits",
  "parry3d",
  "rustc-hash",
@@ -3787,9 +3798,9 @@ dependencies = [
 
 [[package]]
 name = "spade"
-version = "2.4.1"
+version = "2.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "87a3ef2efbc408c9051c1a27ce7edff430d74531d31a480b7ca4f618072c2670"
+checksum = "61addf9117b11d1f5b4bf6fe94242ba25f59d2d4b2080544b771bd647024fd00"
 dependencies = [
  "hashbrown 0.14.3",
  "num-traits",
@@ -4427,9 +4438,9 @@ dependencies = [
 
 [[package]]
 name = "wide"
-version = "0.7.13"
+version = "0.7.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c68938b57b33da363195412cfc5fc37c9ed49aa9cfe2156fde64b8d2c9498242"
+checksum = "b31891d644eba1789fb6715f27fbc322e4bdf2ecdc412ede1993246159271613"
 dependencies = [
  "bytemuck",
  "safe_arch",
