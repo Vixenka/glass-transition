@@ -17,12 +17,13 @@ impl Plugin for CharacterPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((PlayerPlugin, EnemyPlugin))
             .replicate::<CharacterVectors>()
+            .configure_sets(FixedUpdate, MoveCharacters.before(PhysicsSet::SyncBackend))
             .add_systems(
                 FixedUpdate,
                 (ground_characters, move_characters)
                     .chain()
-                    .before(PhysicsSet::StepSimulation)
-                    .in_set(MoveCharacters),
+                    .after(MoveCharacters)
+                    .before(PhysicsSet::SyncBackend),
             );
     }
 }

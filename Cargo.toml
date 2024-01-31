@@ -9,7 +9,7 @@ dynamic-linking = ["bevy/dynamic_linking"]
 
 [dependencies]
 bevy = { version = "0.12.1", features = ["file_watcher"] }
-bevy_rapier3d = { git = "https://github.com/liquidev/bevy_rapier", rev = "8dfab9c465580297601236bed58daf7c0de77ab5" }
+bevy_rapier3d = { git = "https://github.com/liquidev/bevy_rapier", rev = "bf89857fbca823bd8fdbe18b471c074f6a889dae" }
 bevy_egui = "0.24.0"
 bevy_replicon = "0.18.1"
 egui_plot = "0.24.1"
