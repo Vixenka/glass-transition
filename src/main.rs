@@ -1,8 +1,8 @@
 use std::f32::consts::PI;
 
 use bevy::{pbr::CascadeShadowConfigBuilder, prelude::*};
+use bevy_dev::prototype_material::PrototypeMaterialMeshBundle;
 use bevy_rapier3d::prelude::*;
-use developer_tools::prototype_material::PrototypeMaterial;
 
 pub mod camera;
 pub mod character;
@@ -44,18 +44,13 @@ fn main() {
         .run();
 }
 
-fn setup(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut prototype_materials: ResMut<Assets<PrototypeMaterial>>,
-    assets: Res<AssetServer>,
-) {
+fn setup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
     commands.spawn((
         RigidBody::Fixed,
         Collider::cuboid(25.0, 1.0, 25.0),
-        MaterialMeshBundle {
+        PrototypeMaterialMeshBundle {
             mesh: meshes.add(shape::Box::new(50.0, 2.0, 50.0).into()),
-            material: PrototypeMaterial::get(&mut prototype_materials, &assets, "floor"),
+            material: "floor",
             ..default()
         },
     ));
@@ -63,10 +58,10 @@ fn setup(
     commands.spawn((
         RigidBody::Fixed,
         Collider::cuboid(2.0, 1.0, 0.5),
-        MaterialMeshBundle {
+        PrototypeMaterialMeshBundle {
             transform: Transform::from_xyz(0.0, 1.0, 5.0),
             mesh: meshes.add(shape::Box::new(4.0, 2.0, 1.0).into()),
-            material: PrototypeMaterial::get(&mut prototype_materials, &assets, "wall"),
+            material: "wall",
             ..default()
         },
     ));

@@ -12,6 +12,7 @@ bevy = { version = "0.12.1", features = ["file_watcher"] }
 bevy_rapier3d = { git = "https://github.com/liquidev/bevy_rapier", rev = "bf89857fbca823bd8fdbe18b471c074f6a889dae" }
 bevy_egui = "0.24.0"
 bevy_replicon = "0.21.2"
+bevy_dev = "0.1.1"
 egui_plot = "0.24.1"
 random_color = "0.8.0"
 serde = "1.0.196"

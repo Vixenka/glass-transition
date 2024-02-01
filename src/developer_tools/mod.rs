@@ -1,11 +1,8 @@
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts};
 
-use self::prototype_material::PrototypeMaterial;
-
 pub mod interaction;
 pub mod player_position;
-pub mod prototype_material;
 pub mod spawn;
 pub mod time;
 
@@ -14,7 +11,7 @@ pub struct DeveloperToolsPlugin;
 impl Plugin for DeveloperToolsPlugin {
     fn build(&self, app: &mut App) {
         // Plugins
-        app.add_plugins(MaterialPlugin::<PrototypeMaterial>::default())
+        app.add_plugins(bevy_dev::DevPlugins)
             .add_plugins(interaction::InteractionPlugin)
             .add_plugins(player_position::PlayerPositionPlugin)
             .add_plugins(time::TimePlugin)
