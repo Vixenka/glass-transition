@@ -11,7 +11,10 @@ use bevy_replicon::{
         server_event::{SendMode, ServerEventAppExt, ToClients},
         EventType,
     },
-    replicon_core::replication_rules::{AppReplicationExt, Ignored, Replication},
+    replicon_core::{
+        dont_replicate::CommandDontReplicateExt,
+        replication_rules::{AppReplicationExt, Replication},
+    },
     server::ServerSet,
 };
 use serde::{Deserialize, Serialize};
@@ -75,10 +78,10 @@ pub fn spawn(
     let mut entity_commands = commands.spawn((
         player,
         SharedPlayerBundle::new(meshes, materials, transform, kind),
-        Ignored::<Transform>::default(),
     ));
+    let entity_commands = entity_commands.dont_replicate::<Transform>();
 
-    add_kind_dependent_components_to_players(&mut entity_commands, kind, transform);
+    add_kind_dependent_components_to_players(entity_commands, kind, transform);
 }
 
 fn init_players(
